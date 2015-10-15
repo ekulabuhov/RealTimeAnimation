@@ -1,18 +1,13 @@
 #include <iostream>
-#include <fstream>
-#include <sstream>
 
 #include <GL\glew.h>
-
 #include <GLFW/glfw3.h>
+
+#include "ShaderManager.hpp"
 
 GLuint VBO;
 GLuint VAO;
 GLuint EBO;
-
-GLuint vShader;
-GLuint fShader;
-GLuint shaderProgram;
 
 void initBuffers()
 {
@@ -48,20 +43,6 @@ void initBuffers()
 
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glBindVertexArray(0);
-}
-
-void initShaders(const char* vShaderFilePath, const char* fShaderFilePath)
-{
-	std::ifstream fStream;
-	fStream.open(vShaderFilePath);
-	if (!fStream.is_open())
-	{
-		std::cout << "Could not open vertex shader file: " << vShaderFilePath << std::endl;
-		return;
-	}
-	std::stringstream buffer;
-	buffer << fStream.rdbuf();
-	std::string vertShaderSource = buffer.str();
 }
 
 void drawCube()
@@ -114,7 +95,7 @@ int main()
 
 	initBuffers();
 
-	initShaders("..\\shaders\\simple.vert", "");
+	ShaderManager::loadShader("simple");
 
 	while (!glfwWindowShouldClose(window))
 	{
