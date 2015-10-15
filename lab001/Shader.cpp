@@ -128,4 +128,6 @@ bool Shader::_linkShaders(GLuint shaderProgram, GLuint vertShader, GLuint fragSh
 		delete[] errorString;
 		return false;
 	}
+
+	return true;
 }

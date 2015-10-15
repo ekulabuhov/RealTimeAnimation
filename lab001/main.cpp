@@ -96,7 +96,7 @@ int main()
 	initBuffers();
 
 	ShaderManager::loadShader("simple");
-
+	ShaderManager::enableShader("simple");
 	while (!glfwWindowShouldClose(window))
 	{
 		/* Rendering Code */
