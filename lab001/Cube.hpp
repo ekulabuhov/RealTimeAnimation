@@ -31,6 +31,7 @@ public:
 
 	void setShader(Shader* s);
 	void setShader(std::string shader);
+	Shader* getShader();
 };
 
 #endif

@@ -146,13 +146,13 @@ GLuint Shader::_getUniformLocation(std::string uniformName)
 		return uniformLocation;
 	}
 
-	return NULL;
+	return -1;
 }
 
 void Shader::setUniformMatrix4fv(std::string uniformName, glm::mat4x4 mat)
 {
 	GLuint uniformLocation = this->_getUniformLocation(uniformName);
-	if (uniformLocation == NULL)
+	if (uniformLocation == -1)
 		return;
 	glUniformMatrix4fv(uniformLocation, 1, GL_FALSE, &mat[0][0]);
 }

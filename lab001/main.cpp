@@ -62,20 +62,30 @@ int main()
 
 	/* Load shaders needed */
 	cube1.setShader(ShaderManager::loadShader("cube1"));
-	ShaderManager::loadShader("cube2");
-	ShaderManager::loadShader("cube3");
+
+	glm::mat4 projectionMatrix = glm::perspective(
+		45.0f,
+		1.0f,
+		0.1f,
+		1000.0f
+	);
+
+	glm::mat4 viewMatrix = glm::lookAt(
+		glm::vec3(0.0f,0.0f,5.0f),
+		glm::vec3(0.0f,0.0f,0.0f),
+		glm::vec3(0.0f,1.0f,0.0f)
+	);
 
 	while (!glfwWindowShouldClose(window))
 	{
 		/* Rendering Code */
 		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		ShaderManager::useShader("cube1");
-		cube1.rotate(glm::vec3(0.0f, 0.0f, 1.0f));
+		cube1.getShader()->setUniformMatrix4fv("projectionMat", projectionMatrix);
+		cube1.getShader()->setUniformMatrix4fv("viewMat", viewMatrix);
+		cube1.rotate(glm::vec3(0.0f, 0.01f, 0.0f));
 		cube1.draw();
-
-		//ShaderManager::useShader("cube2");
-		//cube2.draw();
 
 		glfwSwapBuffers(window);
 		glfwPollEvents();

@@ -1,9 +1,12 @@
 #version 330 core
-layout (location = 0) in vec3 position;
+in vec3 position;
 
 uniform mat4 modelMat;
+uniform mat4 viewMat;
+uniform mat4 projectionMat;
 
 void main()
 {
-	gl_Position = modelMat * vec4(position.x + 1.0f, position.y, position.z, 1.0);
+	mat4 MVP = projectionMat * viewMat * modelMat;
+	gl_Position = MVP * vec4(position.x, position.y, position.z, 1.0);
 }

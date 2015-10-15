@@ -8,17 +8,43 @@ Cube::Cube()
 	/* Create our list of vertices */
 	GLfloat vertices[] =
 	{
-		0.5f, 0.5f, 0.0f,
-		0.5f, -0.5f, 0.0f,
-		-0.5f, -0.5f, 0.0f,
-		-0.5f, 0.5f, 0.0f
+		0.5f, 0.5f, 0.5f,
+		0.5f, -0.5f, 0.5f,
+		-0.5f, -0.5f, 0.5f,
+		-0.5f, 0.5f, 0.5f,
+
+		0.5f, 0.5f, -0.5f,
+		0.5f, -0.5f, -0.5f,
+		-0.5f, -0.5f, -0.5f,
+		-0.5f, 0.5f, -0.5f,
 	};
 
 	/* Create our list of vertex indices */
 	GLuint indices[] =
 	{
-		0, 1, 3,
-		1, 2, 3
+		/* Front Face */
+		0, 3, 1,
+		1, 3, 2,
+
+		/* Right Face  */
+		4, 0, 5,
+		1, 5, 0,
+
+		/* Back Face */
+		7,4,6,
+		4,5,6,
+
+		/* Left Face */
+		7,2,3,
+		6,2,7,
+
+		/* Top Face */
+		7,3,4,
+		4,3,0,
+
+		/* Bottom Face */
+		6,5,2,
+		1,2,5
 	};
 
 	/* Get GL to allocate space for our array buffers */
@@ -56,7 +82,7 @@ void Cube::draw()
 
 	/* Tell GL we want to work on our VAO */
 	glBindVertexArray(this->_VAO);
-	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+	glDrawElements(GL_TRIANGLES, 6 * 6, GL_UNSIGNED_INT, 0);
 	glBindVertexArray(0);
 }
 
@@ -72,6 +98,11 @@ void Cube::setShader(std::string shader)
 	{
 		this->setShader(s);
 	}
+}
+
+Shader* Cube::getShader()
+{
+	return this->_shader;
 }
 
 void Cube::rotate(glm::vec3 rotation)
