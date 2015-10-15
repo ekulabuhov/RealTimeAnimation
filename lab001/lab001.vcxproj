@@ -41,15 +41,15 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>..\libs\glew\include;..\libs\glfw\include\;$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
-    <LibraryPath>..\libs\glew\lib\Release\Win32;..\libs\glfw\lib-vc2013\;$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86);</LibraryPath>
+    <IncludePath>..\..\libs\glm;..\..\libs\glew\include;..\..\libs\glfw\include\;$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
+    <LibraryPath>..\..\libs\glew\lib\Release\Win32;..\..\libs\glfw\lib-vc2013\;$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86);</LibraryPath>
     <OutDir>$(SolutionDir)build\$(Configuration)\</OutDir>
     <IntDir>$(SolutionDir)build\intermediate\$(Configuration)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>..\libs\glew\include;..\libs\glfw\include\;$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
-    <LibraryPath>..\libs\glew\lib\Release\Win32;..\libs\glfw\lib-vc2013\;$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86);</LibraryPath>
+    <IncludePath>..\..\libs\glm;..\..\libs\glew\include;..\..\libs\glfw\include\;$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
+    <LibraryPath>..\..\libs\glew\lib\Release\Win32;..\..\libs\glfw\lib-vc2013\;$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86);</LibraryPath>
     <OutDir>$(SolutionDir)build\$(Configuration)\</OutDir>
     <IntDir>$(SolutionDir)build\intermediate\$(Configuration)\</IntDir>
   </PropertyGroup>
@@ -86,11 +86,13 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Cube.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Shader.cpp" />
     <ClCompile Include="ShaderManager.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Cube.hpp" />
     <ClInclude Include="Shader.hpp" />
     <ClInclude Include="ShaderManager.hpp" />
   </ItemGroup>

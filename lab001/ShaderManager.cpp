@@ -6,7 +6,7 @@ std::string ShaderManager::_shaderFolderPath = SHADER_MANAGER_DEFAULT_SHADER_FOL
 std::string ShaderManager::_vertShaderExt = SHADER_MANAGER_DEFAULT_VERT_SHADER_EXT;
 std::string ShaderManager::_fragShaderExt = SHADER_MANAGER_DEFAULT_FRAG_SHADER_EXT;
 
-bool ShaderManager::loadShader(std::string shader)
+Shader* ShaderManager::loadShader(std::string shader)
 {
 	std::stringstream vertShaderSS;
 	vertShaderSS << _shaderFolderPath;
@@ -22,20 +22,31 @@ bool ShaderManager::loadShader(std::string shader)
 	bool loaded = s->loadShadersFromFiles(vertShaderSS.str(), fragShaderSS.str());
 
 	if (!loaded)
-		return false;
+		return NULL;
 
 	_shaders[shader] = s;
 
-	return true;
+	return s;
 }
 
-bool ShaderManager::enableShader(std::string shader)
+bool ShaderManager::useShader(std::string shader)
+{
+	/* Make sure we have such a shader first */
+	Shader* s = ShaderManager::getShader(shader);
+	if (s != NULL)
+	{
+		s->enableShader();
+		return true;
+	}
+	return false;
+}
+
+Shader* ShaderManager::getShader(std::string shader)
 {
 	/* Make sure we have such a shader first */
 	if (_shaders.find(shader) != _shaders.end())
 	{
-		_shaders[shader]->enableShader();
+		return _shaders[shader];
 	}
-
-	return false;
+	return NULL;
 }

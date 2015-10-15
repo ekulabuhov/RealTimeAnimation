@@ -4,8 +4,10 @@
 #include <iostream>
 #include <fstream>
 #include <sstream>
+#include <map>
 
 #include <GL\glew.h>
+#include <glm\mat4x4.hpp>
 
 class Shader
 {
@@ -15,6 +17,8 @@ public:
 	void enableShader();
 	void disableShader();
 
+	void setUniformMatrix4fv(std::string uniformName, glm::mat4x4 matrix);
+
 	bool loadShadersFromFiles(std::string vertShaderPath, std::string fragShaderPath);
 
 protected:
@@ -22,9 +26,13 @@ protected:
 	bool _compileShader(std::string source, GLuint shaderType, GLuint shaderID);
 	bool _linkShaders(GLuint shaderProgram, GLuint vertShader, GLuint fragShader);
 
+	GLuint _getUniformLocation(std::string uniform);
+
 	GLuint _vertShaderID;
 	GLuint _fragShaderID;
 	GLuint _shaderProgramID;
+
+	std::map<std::string, GLuint> _shaderVariableLocations;
 };
 
 #endif

@@ -4,80 +4,34 @@
 #include <GLFW/glfw3.h>
 
 #include "ShaderManager.hpp"
+#include "Cube.hpp"
 
-GLuint VBO;
-GLuint VAO;
-GLuint EBO;
+GLFWwindow* window;
 
-void initBuffers()
+bool initWindow()
 {
-	GLfloat vertices[] =
-	{
-		0.5f, 0.5f, 0.0f,
-		0.5f, -0.5f, 0.0f,
-		-0.5f, -0.5f, 0.0f,
-		-0.5f, 0.5f, 0.0f
-	};
-
-	GLuint indices[] = 
-	{
-		0, 1, 3,
-		1, 2, 3
-	};
-
-	GLuint newVAO;
-	glGenVertexArrays(1, &newVAO);
-	VAO = newVAO;
-	glGenBuffers(1, &VBO);
-	glGenBuffers(1, &EBO);
-
-	glBindVertexArray(VAO);
-	glBindBuffer(GL_ARRAY_BUFFER, VBO);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
-
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), NULL);
-	glEnableVertexAttribArray(0);
-
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
-	glBindVertexArray(0);
-}
-
-void drawCube()
-{
-	glBindVertexArray(VAO);
-	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
-	glBindVertexArray(0);
-}
-
-int main()
-{
-	GLFWwindow* window;
-
 	if (!glfwInit())
 	{
 		std::cout << "ERROR: Could not initialise GLFW...";
 		std::cin;
-		return -1;
+		return false;
 	}
 
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-	
+
 	window = glfwCreateWindow(800, 800, "Lab 001", NULL, NULL);
 	if (!window)
 	{
 		glfwTerminate();
 		std::cout << "ERROR: Could not create winodw...";
 		std::cin;
-		return -1;
+		return false;
 	}
 
 	glfwMakeContextCurrent(window);
-	
+
 	std::cout << "OpenGL version: " << glGetString(GL_VERSION) << std::endl;
 
 	glewExperimental = GL_TRUE;
@@ -87,22 +41,41 @@ int main()
 	{
 		std::cout << "ERROR: Problem initialising GLEW: " << glewGetErrorString(err);
 		std::cin;
-		return -1;
+		return false;
 	}
-
 
 	glViewport(0, 0, 800, 800);
 
-	initBuffers();
+	return true;
+}
 
-	ShaderManager::loadShader("simple");
-	ShaderManager::enableShader("simple");
+int main()
+{
+	/* Create GL Window */
+	if (!initWindow())
+		return -1;
+
+	/* Initialise vertex buffers for cube */
+	Cube cube1;
+	Cube cube2;
+	Cube cube3;
+
+	/* Load shaders needed */
+	cube1.setShader(ShaderManager::loadShader("cube1"));
+	ShaderManager::loadShader("cube2");
+	ShaderManager::loadShader("cube3");
+
 	while (!glfwWindowShouldClose(window))
 	{
 		/* Rendering Code */
 		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 
-		drawCube();
+		ShaderManager::useShader("cube1");
+		cube1.rotate(glm::vec3(0.0f, 0.0f, 1.0f));
+		cube1.draw();
+
+		//ShaderManager::useShader("cube2");
+		//cube2.draw();
 
 		glfwSwapBuffers(window);
 		glfwPollEvents();

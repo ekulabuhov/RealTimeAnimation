@@ -13,8 +13,9 @@ class ShaderManager
 {
 public:
 	static bool setShadersFolder(std::string);
-	static bool loadShader(std::string);
-	static bool enableShader(std::string shaderName);
+	static Shader* loadShader(std::string);
+	static bool useShader(std::string shaderName);
+	static Shader* getShader(std::string shaderName);
 
 private:
 	static std::map<std::string, Shader*> _shaders;

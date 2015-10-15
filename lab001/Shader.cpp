@@ -131,3 +131,28 @@ bool Shader::_linkShaders(GLuint shaderProgram, GLuint vertShader, GLuint fragSh
 
 	return true;
 }
+
+GLuint Shader::_getUniformLocation(std::string uniformName)
+{
+	if (this->_shaderVariableLocations.find(uniformName) != this->_shaderVariableLocations.end())
+	{
+		return this->_shaderVariableLocations[uniformName];
+	}
+
+	GLuint uniformLocation = glGetUniformLocation(this->_shaderProgramID, uniformName.c_str());
+	if (uniformLocation != -1)
+	{
+		this->_shaderVariableLocations[uniformName] = uniformLocation;
+		return uniformLocation;
+	}
+
+	return NULL;
+}
+
+void Shader::setUniformMatrix4fv(std::string uniformName, glm::mat4x4 mat)
+{
+	GLuint uniformLocation = this->_getUniformLocation(uniformName);
+	if (uniformLocation == NULL)
+		return;
+	glUniformMatrix4fv(uniformLocation, 1, GL_FALSE, &mat[0][0]);
+}
