@@ -5,6 +5,8 @@ Shader::Shader()
 	this->_fragShaderID = NULL;
 	this->_vertShaderID = NULL;
 	this->_shaderProgramID = NULL;
+
+	this->_shaderVariableLocations = std::map<std::string, GLuint>();
 }
 
 void Shader::enableShader()
@@ -149,6 +151,14 @@ GLuint Shader::_getUniformLocation(std::string uniformName)
 	return -1;
 }
 
+void Shader::setUniformVector4fv(std::string uniformName, glm::vec4 v)
+{
+	GLuint uniformLocation = this->_getUniformLocation(uniformName);
+	if (uniformLocation == -1)
+		return;
+	glUniform4fv(uniformLocation, 1, &v[0]);
+}
+
 void Shader::setUniformMatrix4fv(std::string uniformName, glm::mat4x4 mat)
 {
 	GLuint uniformLocation = this->_getUniformLocation(uniformName);
@@ -156,3 +166,4 @@ void Shader::setUniformMatrix4fv(std::string uniformName, glm::mat4x4 mat)
 		return;
 	glUniformMatrix4fv(uniformLocation, 1, GL_FALSE, &mat[0][0]);
 }
+

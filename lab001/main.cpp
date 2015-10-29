@@ -4,7 +4,8 @@
 #include <GLFW/glfw3.h>
 
 #include "ShaderManager.hpp"
-#include "Cube.hpp"
+#include "Entity.hpp"
+#include "CubeMap.hpp"
 
 GLFWwindow* window;
 
@@ -56,12 +57,15 @@ int main()
 		return -1;
 
 	/* Initialise vertex buffers for cube */
-	Cube cube1;
-	Cube cube2;
-	Cube cube3;
+	CubeMap cubeMap;
+	cubeMap.loadCubeMap("../textures/cubemaps/Yokohama/");
 
 	/* Load shaders needed */
-	cube1.setShader(ShaderManager::loadShader("cube1"));
+	
+
+	Entity dragonModel;
+	dragonModel.loadFromFile("../models/monkey_MODEL.dae");
+	dragonModel.setShader(ShaderManager::loadShader("simpleReflect"));
 
 	glm::mat4 projectionMatrix = glm::perspective(
 		45.0f,
@@ -75,17 +79,27 @@ int main()
 		glm::vec3(0.0f,0.0f,0.0f),
 		glm::vec3(0.0f,1.0f,0.0f)
 	);
-
+  
+	glEnable(GL_DEPTH_TEST);
 	while (!glfwWindowShouldClose(window))
 	{
 		/* Rendering Code */
 		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		cube1.getShader()->setUniformMatrix4fv("projectionMat", projectionMatrix);
-		cube1.getShader()->setUniformMatrix4fv("viewMat", viewMatrix);
-		cube1.rotate(glm::vec3(0.0f, 0.01f, 0.0f));
-		cube1.draw();
+		dragonModel.getShader()->setUniformMatrix4fv("projectionMat", projectionMatrix);
+		dragonModel.getShader()->setUniformMatrix4fv("viewMat", viewMatrix);
+		dragonModel.getShader()->setUniformVector4fv("camPos", glm::vec4(0.0f, 0.0f, 5.0f, 1.0f));
+		dragonModel.rotate(glm::vec3(0.0f, 0.01f, 0.0f));
+		dragonModel.draw();
+		
+	    glDisable(GL_TEXTURE_GEN_S);
+		glDisable(GL_TEXTURE_GEN_T);
+		glDisable(GL_TEXTURE_GEN_R);
+		//CubeMap::drawSkyBox();
+		glEnable(GL_TEXTURE_GEN_S);
+		glEnable(GL_TEXTURE_GEN_T);
+		glEnable(GL_TEXTURE_GEN_R);
 
 		glfwSwapBuffers(window);
 		glfwPollEvents();

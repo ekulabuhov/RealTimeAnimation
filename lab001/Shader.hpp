@@ -17,6 +17,7 @@ public:
 	void enableShader();
 	void disableShader();
 
+	void setUniformVector4fv(std::string uniformName, glm::vec4 matrix);
 	void setUniformMatrix4fv(std::string uniformName, glm::mat4x4 matrix);
 
 	bool loadShadersFromFiles(std::string vertShaderPath, std::string fragShaderPath);
