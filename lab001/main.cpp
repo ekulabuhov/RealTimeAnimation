@@ -6,8 +6,14 @@
 #include "ShaderManager.hpp"
 #include "Entity.hpp"
 #include "CubeMap.hpp"
+#include "Cube.hpp"
 
 GLFWwindow* window;
+Cube* cube1;
+bool keys[1024];
+void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode);
+void do_movement();
+int xRot, yRot, zRot = 0;
 
 bool initWindow()
 {
@@ -33,6 +39,8 @@ bool initWindow()
 
 	glfwMakeContextCurrent(window);
 
+	glfwSetKeyCallback(window, key_callback);
+
 	std::cout << "OpenGL version: " << glGetString(GL_VERSION) << std::endl;
 
 	glewExperimental = GL_TRUE;
@@ -50,6 +58,21 @@ bool initWindow()
 	return true;
 }
 
+// Is called whenever a key is pressed/released via GLFW
+void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode)
+{
+	//cout << key << endl;
+	if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
+		glfwSetWindowShouldClose(window, GL_TRUE);
+	if (key >= 0 && key < 1024)
+	{
+		if (action == GLFW_PRESS)
+			keys[key] = true;
+		else if (action == GLFW_RELEASE)
+			keys[key] = false;
+	}
+}
+
 int main()
 {
 	/* Create GL Window */
@@ -62,10 +85,20 @@ int main()
 
 	/* Load shaders needed */
 	
+	Shader lightingShader = *ShaderManager::loadShader("lighting");
+	Shader lampShader = *ShaderManager::loadShader("lamp");
+	Shader simpleReflectShader = *ShaderManager::loadShader("simpleReflect");
 
-	Entity dragonModel;
-	dragonModel.loadFromFile("../models/monkey_MODEL.dae");
-	dragonModel.setShader(ShaderManager::loadShader("simpleReflect"));
+	//Entity dragonModel;
+	//dragonModel.loadFromFile("../models/monkey_MODEL.dae");
+	//dragonModel.setShader(&lightingShader);
+
+	glm::vec3 cube1Position(0.0f, 0.0f, 0.0F);
+	cube1 = new Cube(&lightingShader, cube1Position);
+
+	glm::vec3 lampPos(0.0f, 0.0f, 6.0f);
+	//Cube lamp(&lampShader, lampPos);
+	//lamp.scale(glm::vec3(0.2f));
 
 	glm::mat4 projectionMatrix = glm::perspective(
 		45.0f,
@@ -74,8 +107,10 @@ int main()
 		1000.0f
 	);
 
+	glm::vec3 cameraPosition(0.0f, 0.0f, 5.0f);
+
 	glm::mat4 viewMatrix = glm::lookAt(
-		glm::vec3(0.0f,0.0f,5.0f),
+		cameraPosition,
 		glm::vec3(0.0f,0.0f,0.0f),
 		glm::vec3(0.0f,1.0f,0.0f)
 	);
@@ -84,14 +119,36 @@ int main()
 	while (!glfwWindowShouldClose(window))
 	{
 		/* Rendering Code */
-		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+		glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		do_movement();
 
-		dragonModel.getShader()->setUniformMatrix4fv("projectionMat", projectionMatrix);
-		dragonModel.getShader()->setUniformMatrix4fv("viewMat", viewMatrix);
-		dragonModel.getShader()->setUniformVector4fv("camPos", glm::vec4(0.0f, 0.0f, 5.0f, 1.0f));
-		dragonModel.rotate(glm::vec3(0.0f, 0.01f, 0.0f));
-		dragonModel.draw();
+		simpleReflectShader.enableShader();
+		simpleReflectShader.setUniformMatrix4fv("projectionMat", projectionMatrix);
+		simpleReflectShader.setUniformMatrix4fv("viewMat", viewMatrix);
+		simpleReflectShader.setUniformVector4fv("camPos", glm::vec4(0.0f, 0.0f, 5.0f, 1.0f));
+		//dragonModel.rotate(glm::vec3(0.0f, 0.01f, 0.0f));
+		//dragonModel.draw();
+
+		//lampPos = glm::vec3(sin(glfwGetTime()) * 2.0f, sin(glfwGetTime() / 2.0f) * 1.0f, 2.0f);
+
+		lightingShader.enableShader();
+		lightingShader.setUniformMatrix4fv("projection", projectionMatrix);
+		lightingShader.setUniformMatrix4fv("view", viewMatrix);
+		lightingShader.setUniformVector3f("objectColor", glm::vec3(1.0f, 0.5f, 0.31f));
+		lightingShader.setUniformVector3f("lightColor", glm::vec3(1.0f, 0.5f, 1.0f));
+		lightingShader.setUniformVector3f("lightPos", lampPos);
+		lightingShader.setUniformVector3f("viewPos", cameraPosition);
+
+		//cube1->rotate(glm::vec3(0.01f, 0.00f, 0.00f));
+		cube1->draw();
+
+		//lampShader.enableShader();
+		//lampShader.setUniformMatrix4fv("projection", projectionMatrix);
+		//lampShader.setUniformMatrix4fv("view", viewMatrix);
+		////lamp.setPosition(lampPos);
+		////lamp.scale(glm::vec3(0.2f));
+		//lamp.draw();
 		
 	    glDisable(GL_TEXTURE_GEN_S);
 		glDisable(GL_TEXTURE_GEN_T);
@@ -103,8 +160,45 @@ int main()
 
 		glfwSwapBuffers(window);
 		glfwPollEvents();
+		int xRotAngle = (int)std::abs(((xRot % 630 + 630) / 1.75)) % 360;
+		int yRotAngle = (int)std::abs(((yRot % 630 + 630) / 1.75)) % 360;
+		int zRotAngle = (int)std::abs(((zRot % 630 + 630) / 1.75)) % 360;
+		printf("x: %d, y: %d, z: %d\n", xRotAngle, yRotAngle, zRotAngle);
 	}
 
 	glfwTerminate();
 	return 0;
+}
+
+// Moves/alters the object positions based on user input
+void do_movement()
+{
+	if (keys[GLFW_KEY_SPACE]) {
+		cube1->setPosition(glm::vec3(0.0f, 0.0f, 0.0f));
+	}
+
+	if (keys[GLFW_KEY_W]) {
+		yRot--;
+		cube1->rotate(glm::vec3(0.01f, 0.0f, 0.0f));
+	}
+	if (keys[GLFW_KEY_S]) {
+		yRot++;
+		cube1->rotate(glm::vec3(-0.01f, 0.0f, 0.0f));
+	}
+	if (keys[GLFW_KEY_D]) {
+		xRot--;
+		cube1->rotate(glm::vec3(0.0f, 0.01f, 0.0f));
+	}
+	if (keys[GLFW_KEY_A]) {
+		xRot++;
+		cube1->rotate(glm::vec3(0.0f, -0.01f, 0.0f));
+	}
+	if (keys[GLFW_KEY_Q]) {
+		zRot++;
+		cube1->rotate(glm::vec3(0.0f, 0.0f, 0.01f));
+	}
+	if (keys[GLFW_KEY_E]) {
+		zRot--;
+		cube1->rotate(glm::vec3(0.0f, 0.0f, -0.01f));
+	}
 }

@@ -8,4 +8,7 @@
     <LocalDebuggerEnvironment>PATH=..\..\libs\assimp\bin\x86\;\..\..\libs\glew\bin\Release\Win32\;..\..\libs\glfw\lib-vc2013\;$(PATH)</LocalDebuggerEnvironment>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
   </PropertyGroup>
+  <PropertyGroup>
+    <ShowAllFiles>false</ShowAllFiles>
+  </PropertyGroup>
 </Project>

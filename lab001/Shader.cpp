@@ -42,6 +42,7 @@ bool Shader::loadShadersFromFiles(std::string vertShaderPath, std::string fragSh
 	/* Make sure shaders compiled */
 	if (!vertShaderCompiled || !fragShaderCompiled)
 	{
+		throw std::invalid_argument("Could not compile one of the shaders");
 		return false;
 	}
 
@@ -165,5 +166,13 @@ void Shader::setUniformMatrix4fv(std::string uniformName, glm::mat4x4 mat)
 	if (uniformLocation == -1)
 		return;
 	glUniformMatrix4fv(uniformLocation, 1, GL_FALSE, &mat[0][0]);
+}
+
+void Shader::setUniformVector3f(std::string uniformName, glm::vec3 v)
+{
+	GLuint uniformLocation = this->_getUniformLocation(uniformName);
+	if (uniformLocation == -1)
+		return;
+	glUniform3fv(uniformLocation, 1, &v[0]);
 }
 

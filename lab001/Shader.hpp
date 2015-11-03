@@ -8,6 +8,7 @@
 
 #include <GL\glew.h>
 #include <glm\mat4x4.hpp>
+#include <glm\vec3.hpp>
 
 class Shader
 {
@@ -19,6 +20,7 @@ public:
 
 	void setUniformVector4fv(std::string uniformName, glm::vec4 matrix);
 	void setUniformMatrix4fv(std::string uniformName, glm::mat4x4 matrix);
+	void Shader::setUniformVector3f(std::string uniformName, glm::vec3 v);
 
 	bool loadShadersFromFiles(std::string vertShaderPath, std::string fragShaderPath);
 
