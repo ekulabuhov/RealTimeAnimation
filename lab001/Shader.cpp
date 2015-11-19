@@ -58,8 +58,8 @@ bool Shader::loadShadersFromFiles(std::string vertShaderPath, std::string fragSh
 	}
 
 	/* Always detach after successful link. See: https://www.opengl.org/wiki/Shader_Compilation */
-	glDetachShader(this->_shaderProgramID, this->_vertShaderID);
-	glDetachShader(this->_shaderProgramID, this->_fragShaderID);
+	//glDetachShader(this->_shaderProgramID, this->_vertShaderID);
+	//glDetachShader(this->_shaderProgramID, this->_fragShaderID);
 
 	return true;
 }
@@ -174,5 +174,13 @@ void Shader::setUniformVector3f(std::string uniformName, glm::vec3 v)
 	if (uniformLocation == -1)
 		return;
 	glUniform3fv(uniformLocation, 1, &v[0]);
+}
+
+void Shader::setUniform1f(std::string uniformName, GLfloat v)
+{
+	GLuint uniformLocation = this->_getUniformLocation(uniformName);
+	if (uniformLocation == -1)
+		return;
+	glUniform1f(uniformLocation, v);
 }
 

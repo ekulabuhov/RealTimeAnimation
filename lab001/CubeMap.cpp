@@ -45,16 +45,16 @@ CubeMap::CubeMap()
 		-10.0f, -10.0f,  10.0f,
 		10.0f, -10.0f,  10.0f
 	};
-	GLuint vbo;
-	glGenBuffers (1, &vbo);
-	glBindBuffer (GL_ARRAY_BUFFER, vbo);
+
+	glGenBuffers (1, &this->_VBO);
+	glBindBuffer (GL_ARRAY_BUFFER, this->_VBO);
 	glBufferData (GL_ARRAY_BUFFER, 3 * 36 * sizeof (float), &points, GL_STATIC_DRAW);
 
-	GLuint vao;
-	glGenVertexArrays (1, &vao);
-	glBindVertexArray (vao);
+
+	glGenVertexArrays (1, &this->_VAO);
+	glBindVertexArray (this->_VAO);
 	glEnableVertexAttribArray (0);
-	glBindBuffer (GL_ARRAY_BUFFER, vbo);
+	glBindBuffer (GL_ARRAY_BUFFER, this->_VBO);
 	glVertexAttribPointer (0, 3, GL_FLOAT, GL_FALSE, 0, NULL);
 
 	glBindBuffer(GL_ARRAY_BUFFER, NULL);
@@ -157,4 +157,14 @@ bool CubeMap::load_cube_map_side (
 	}else{
 		std::cout << "Couldn't load texture: " << file_name << std::endl;
 	}
+}
+
+void CubeMap::drawSkyBox(Shader shader) {
+	glDepthMask(GL_FALSE);
+	shader.enableShader();
+	glBindVertexArray(this->_VAO);
+	glBindTexture(GL_TEXTURE_CUBE_MAP, this->texID);
+	glDrawArrays(GL_TRIANGLES, 0, 36);
+	glBindVertexArray(0);
+	glDepthMask(GL_TRUE);
 }

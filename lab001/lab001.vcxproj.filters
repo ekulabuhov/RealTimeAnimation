@@ -13,6 +13,11 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="Shaders">
+      <UniqueIdentifier>{23f94f0d-266f-44e1-9d96-3a1ec415b978}</UniqueIdentifier>
+      <Extensions>frag;vert</Extensions>
+      <ParseFiles>false</ParseFiles>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -24,15 +29,6 @@
     <ClCompile Include="ShaderManager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Entity.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Mesh.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="ModelImporter.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="CubeMap.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -40,6 +36,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Geometry.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="MyForm.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -50,17 +49,102 @@
     <ClInclude Include="ShaderManager.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Entity.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Mesh.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="ModelImporter.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="CubeMap.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="MyForm.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Camera.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="model.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Mesh.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Plane.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="MyForm.resx">
+      <Filter>Resource Files</Filter>
+    </EmbeddedResource>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="shaders\blinnPhong.frag">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="shaders\blinnPhong.vert">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="shaders\cube1.frag">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="shaders\cube1.vert">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="shaders\cube2.frag">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="shaders\cube2.vert">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="shaders\cube3.frag">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="shaders\cube3.vert">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="shaders\lamp.frag">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="shaders\lamp.vert">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="shaders\lighting.frag">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="shaders\lighting.vert">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="shaders\simple.frag">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="shaders\simple.vert">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="shaders\simpleReflect.frag">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="shaders\simpleReflect.vert">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="shaders\skybox.frag">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="shaders\skybox.vert">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="shaders\reflect.frag">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="shaders\reflect.vert">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="shaders\refract.frag">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="shaders\refract.vert">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="shaders\reflectAndRefract.frag">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="shaders\reflectAndRefract.vert">
+      <Filter>Shaders</Filter>
+    </None>
   </ItemGroup>
 </Project>

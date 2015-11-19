@@ -46,7 +46,7 @@ GLfloat Cube::vertices[] = {
 };
 
 Cube::Cube(Shader* shader, glm::vec3 position) 
-	: Geometry(shader, position, vertices, sizeof(vertices), NULL, 0)
+	: Geometry(shader, position, vertices, sizeof(vertices))
 {
 
 }

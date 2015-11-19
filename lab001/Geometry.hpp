@@ -5,6 +5,7 @@
 #include <glm\vec3.hpp>
 #include <glm\mat4x4.hpp>
 #include <glm\gtc\matrix_transform.hpp>
+#include <SOIL.h>
 
 #include "ShaderManager.hpp"
 
@@ -15,6 +16,7 @@ private:
 	glm::vec3 _position;
 	glm::mat4x4 _modelMatrix;
 	glm::mat4 _projectionMatrix;
+	GLuint textureId;
 
 	GLuint _VBO;
 	GLuint _VAO;
@@ -24,7 +26,7 @@ private:
 
 public:
 	Geometry(Shader* shader, glm::vec3 position,
-		GLfloat vertices[], int sizeOfVertices, GLuint indices[], int sizeOfIndices);
+		GLfloat vertices[], int sizeOfVertices, GLchar* texturePath = NULL);
 
 	void draw();
 

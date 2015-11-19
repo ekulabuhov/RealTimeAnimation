@@ -20,9 +20,12 @@ public:
 
 	void setUniformVector4fv(std::string uniformName, glm::vec4 matrix);
 	void setUniformMatrix4fv(std::string uniformName, glm::mat4x4 matrix);
-	void Shader::setUniformVector3f(std::string uniformName, glm::vec3 v);
+	void setUniformVector3f(std::string uniformName, glm::vec3 v);
+	void setUniform1f(std::string uniformName, GLfloat v);
 
 	bool loadShadersFromFiles(std::string vertShaderPath, std::string fragShaderPath);
+
+	GLuint _shaderProgramID;
 
 protected:
 	std::string _readShaderFile(std::string path);
@@ -33,7 +36,7 @@ protected:
 
 	GLuint _vertShaderID;
 	GLuint _fragShaderID;
-	GLuint _shaderProgramID;
+	
 
 	std::map<std::string, GLuint> _shaderVariableLocations;
 };

@@ -21,6 +21,7 @@
     <UseDebugLibraries>true</UseDebugLibraries>
     <CharacterSet>Unicode</CharacterSet>
     <PlatformToolset>v110</PlatformToolset>
+    <CLRSupport>true</CLRSupport>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
@@ -41,8 +42,8 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>..\..\libs\devil\include\;..\..\libs\stb_image\;..\..\libs\assimp\include\;..\..\libs\glm;..\..\libs\glew\include;..\..\libs\glfw\include\;$(VC_IncludePath);$(WindowsSDK_IncludePath);$(IncludePath);$(IncludePath)</IncludePath>
-    <LibraryPath>..\..\libs\devil\lib\;..\..\libs\assimp\lib\x86\;..\..\libs\glew\lib\Release\Win32;..\..\libs\glfw\lib-vc2012\;$(WindowsSDK_LibraryPath_x86);$(LibraryPath)</LibraryPath>
+    <IncludePath>..\..\libs\soil\src\;..\..\libs\devil\include\;..\..\libs\stb_image\;..\..\libs\assimp\include\;..\..\libs\glm;..\..\libs\glew\include;..\..\libs\glfw\include\;$(VC_IncludePath);$(WindowsSDK_IncludePath);$(IncludePath)</IncludePath>
+    <LibraryPath>C:\Program Files (x86)\Windows Kits\8.0\Lib\win8\um\x86\;..\..\libs\soil\lib\;..\..\libs\devil\lib\;..\..\libs\assimp\lib\x86\;..\..\libs\glew\lib\Release\Win32;..\..\libs\glfw\lib-vc2012\;$(WindowsSDK_LibraryPath_x86);$(LibraryPath)</LibraryPath>
     <OutDir>$(SolutionDir)build\$(Configuration)\</OutDir>
     <IntDir>$(SolutionDir)build\intermediate\$(Configuration)\</IntDir>
   </PropertyGroup>
@@ -60,12 +61,18 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>DevIL.lib;assimp.lib;glew32.lib;opengl32.lib;glfw3.lib;glfw3dll.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>SOIL.lib;DevIL.lib;assimp.lib;glew32.lib;opengl32.lib;glfw3.lib;glfw3dll.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
+    <PostBuildEvent>
+      <Command>copy /Y "$(SolutionDir)build\$(Configuration)\lab001.exe" "$(SolutionDir)lab001"
+copy /Y "$(SolutionDir)build\$(Configuration)\lab001.pdb" "$(SolutionDir)lab001"</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -88,21 +95,61 @@
   <ItemGroup>
     <ClCompile Include="Cube.cpp" />
     <ClCompile Include="CubeMap.cpp" />
-    <ClCompile Include="Entity.cpp" />
     <ClCompile Include="Geometry.cpp" />
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="Mesh.cpp" />
-    <ClCompile Include="ModelImporter.cpp" />
+    <ClCompile Include="MyForm.cpp" />
     <ClCompile Include="Shader.cpp" />
     <ClCompile Include="ShaderManager.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Camera.h" />
     <ClInclude Include="CubeMap.hpp" />
-    <ClInclude Include="Entity.hpp" />
-    <ClInclude Include="Mesh.hpp" />
-    <ClInclude Include="ModelImporter.hpp" />
+    <ClInclude Include="Mesh.h" />
+    <ClInclude Include="model.h" />
+    <ClInclude Include="MyForm.h">
+      <FileType>CppForm</FileType>
+    </ClInclude>
+    <ClInclude Include="Plane.h" />
     <ClInclude Include="Shader.hpp" />
     <ClInclude Include="ShaderManager.hpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.Windows.Forms" />
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="MyForm.resx">
+      <DependentUpon>MyForm.h</DependentUpon>
+    </EmbeddedResource>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="shaders\blinnPhong.frag" />
+    <None Include="shaders\blinnPhong.vert" />
+    <None Include="shaders\cube1.frag" />
+    <None Include="shaders\cube1.vert" />
+    <None Include="shaders\cube2.frag" />
+    <None Include="shaders\cube2.vert" />
+    <None Include="shaders\cube3.frag" />
+    <None Include="shaders\cube3.vert" />
+    <None Include="shaders\lamp.frag" />
+    <None Include="shaders\lamp.vert" />
+    <None Include="shaders\lighting.frag" />
+    <None Include="shaders\lighting.vert" />
+    <None Include="shaders\reflect.frag" />
+    <None Include="shaders\reflect.vert" />
+    <None Include="shaders\reflectAndRefract.frag" />
+    <None Include="shaders\reflectAndRefract.vert" />
+    <None Include="shaders\refract.frag" />
+    <None Include="shaders\refract.vert" />
+    <None Include="shaders\simple.frag" />
+    <None Include="shaders\simple.vert" />
+    <None Include="shaders\simpleReflect.frag" />
+    <None Include="shaders\simpleReflect.vert" />
+    <None Include="shaders\skybox.frag" />
+    <None Include="shaders\skybox.vert" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
