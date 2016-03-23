@@ -54,6 +54,10 @@ public:
     {
 		this->_modelMatrix = glm::translate(this->_modelMatrix, translate);
     }
+
+	void SetModelMatrix(glm::mat4 m) {
+		this->_modelMatrix = m;
+	}
     
 private:
     /*  Model Data  */

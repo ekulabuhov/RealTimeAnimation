@@ -42,8 +42,8 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>..\..\libs\soil\src\;..\..\libs\devil\include\;..\..\libs\stb_image\;..\..\libs\assimp\include\;..\..\libs\glm;..\..\libs\glew\include;..\..\libs\glfw\include\;$(VC_IncludePath);$(WindowsSDK_IncludePath);$(IncludePath)</IncludePath>
-    <LibraryPath>C:\Program Files (x86)\Windows Kits\8.0\Lib\win8\um\x86\;..\..\libs\soil\lib\;..\..\libs\devil\lib\;..\..\libs\assimp\lib\x86\;..\..\libs\glew\lib\Release\Win32;..\..\libs\glfw\lib-vc2012\;$(WindowsSDK_LibraryPath_x86);$(LibraryPath)</LibraryPath>
+    <IncludePath>..\..\libs\AntTweakBar\include;..\..\libs\soil\src\;..\..\libs\devil\include\;..\..\libs\stb_image\;..\..\libs\assimp\include\;..\..\libs\glm;..\..\libs\glew\include;..\..\libs\glfw\include\;$(VC_IncludePath);$(WindowsSDK_IncludePath);$(IncludePath)</IncludePath>
+    <LibraryPath>..\..\libs\AntTweakBar\lib;C:\Program Files (x86)\Windows Kits\8.0\Lib\win8\um\x86\;..\..\libs\soil\lib\;..\..\libs\devil\lib\;..\..\libs\assimp\lib\x86\;..\..\libs\glew\lib\Release\Win32;..\..\libs\glfw\lib-vc2012\;$(WindowsSDK_LibraryPath_x86);$(LibraryPath)</LibraryPath>
     <OutDir>$(SolutionDir)build\$(Configuration)\</OutDir>
     <IntDir>$(SolutionDir)build\intermediate\$(Configuration)\</IntDir>
   </PropertyGroup>
@@ -66,7 +66,7 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>SOIL.lib;DevIL.lib;assimp.lib;glew32.lib;opengl32.lib;glfw3.lib;glfw3dll.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>AntTweakBar64.lib;SOIL.lib;DevIL.lib;assimp.lib;glew32.lib;opengl32.lib;glfw3.lib;glfw3dll.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
@@ -93,6 +93,7 @@ copy /Y "$(SolutionDir)build\$(Configuration)\lab001.pdb" "$(SolutionDir)lab001"
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Cone.cpp" />
     <ClCompile Include="Cube.cpp" />
     <ClCompile Include="CubeMap.cpp" />
     <ClCompile Include="Geometry.cpp" />
@@ -103,6 +104,7 @@ copy /Y "$(SolutionDir)build\$(Configuration)\lab001.pdb" "$(SolutionDir)lab001"
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Camera.h" />
+    <ClInclude Include="Cone.h" />
     <ClInclude Include="CubeMap.hpp" />
     <ClInclude Include="Mesh.h" />
     <ClInclude Include="model.h" />
@@ -144,6 +146,8 @@ copy /Y "$(SolutionDir)build\$(Configuration)\lab001.pdb" "$(SolutionDir)lab001"
     <None Include="shaders\reflectAndRefract.vert" />
     <None Include="shaders\refract.frag" />
     <None Include="shaders\refract.vert" />
+    <None Include="shaders\shadow.frag" />
+    <None Include="shaders\shadow.vert" />
     <None Include="shaders\simple.frag" />
     <None Include="shaders\simple.vert" />
     <None Include="shaders\simpleReflect.frag" />

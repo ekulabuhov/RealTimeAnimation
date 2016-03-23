@@ -34,20 +34,45 @@ namespace lab001 {
 				delete components;
 			}
 		}
+	public: System::Windows::Forms::Label^  lblAngleX;
+	public: System::Windows::Forms::TrackBar^  posXTrackBar;
+	public: System::Windows::Forms::TrackBar^  posYTrackBar;
+	protected:
 
 
-	private: System::Windows::Forms::Label^  lblRefractiveIndex;
-	public: System::Windows::Forms::TrackBar^  refractiveTrackBar;
-	public: System::Windows::Forms::TrackBar^  ratioTrackBar;
 
-	private: System::Windows::Forms::Label^  label1;
-	private: System::Windows::Forms::Label^  label2;
-	private: System::Windows::Forms::Label^  label3;
-	public: System::Windows::Forms::TrackBar^  textureTrackBar;
+	public: System::Windows::Forms::Label^  lblAngleY;
+	public: System::Windows::Forms::TrackBar^  posZTrackBar;
+	private:
+	protected:
+
+
+
+
+
+
+
+	public: System::Windows::Forms::Label^  lblAngleZ;
+	public: System::Windows::Forms::CheckBox^  cbAnimate;
+
+	public: 
+
+	public:
+	private:
+
+
+	public:
+	private:
+	public:
+
+
+
+
+
 	private: 
-	private: System::Windows::Forms::Label^  label4;
-	public: System::Windows::Forms::CheckBox^  rotateCB;
-	public: System::Windows::Forms::CheckBox^  normalMapCB;
+
+
+
 
 	public: 
 	private: 
@@ -81,141 +106,103 @@ namespace lab001 {
 		/// </summary>
 		void InitializeComponent(void)
 		{
-			this->lblRefractiveIndex = (gcnew System::Windows::Forms::Label());
-			this->refractiveTrackBar = (gcnew System::Windows::Forms::TrackBar());
-			this->ratioTrackBar = (gcnew System::Windows::Forms::TrackBar());
-			this->label1 = (gcnew System::Windows::Forms::Label());
-			this->label2 = (gcnew System::Windows::Forms::Label());
-			this->label3 = (gcnew System::Windows::Forms::Label());
-			this->textureTrackBar = (gcnew System::Windows::Forms::TrackBar());
-			this->label4 = (gcnew System::Windows::Forms::Label());
-			this->rotateCB = (gcnew System::Windows::Forms::CheckBox());
-			this->normalMapCB = (gcnew System::Windows::Forms::CheckBox());
-			(cli::safe_cast<System::ComponentModel::ISupportInitialize^  >(this->refractiveTrackBar))->BeginInit();
-			(cli::safe_cast<System::ComponentModel::ISupportInitialize^  >(this->ratioTrackBar))->BeginInit();
-			(cli::safe_cast<System::ComponentModel::ISupportInitialize^  >(this->textureTrackBar))->BeginInit();
+			this->lblAngleX = (gcnew System::Windows::Forms::Label());
+			this->posXTrackBar = (gcnew System::Windows::Forms::TrackBar());
+			this->posYTrackBar = (gcnew System::Windows::Forms::TrackBar());
+			this->lblAngleY = (gcnew System::Windows::Forms::Label());
+			this->posZTrackBar = (gcnew System::Windows::Forms::TrackBar());
+			this->lblAngleZ = (gcnew System::Windows::Forms::Label());
+			this->cbAnimate = (gcnew System::Windows::Forms::CheckBox());
+			(cli::safe_cast<System::ComponentModel::ISupportInitialize^  >(this->posXTrackBar))->BeginInit();
+			(cli::safe_cast<System::ComponentModel::ISupportInitialize^  >(this->posYTrackBar))->BeginInit();
+			(cli::safe_cast<System::ComponentModel::ISupportInitialize^  >(this->posZTrackBar))->BeginInit();
 			this->SuspendLayout();
 			// 
-			// lblRefractiveIndex
+			// lblAngleX
 			// 
-			this->lblRefractiveIndex->AutoSize = true;
-			this->lblRefractiveIndex->Location = System::Drawing::Point(12, 7);
-			this->lblRefractiveIndex->Name = L"lblRefractiveIndex";
-			this->lblRefractiveIndex->Size = System::Drawing::Size(105, 13);
-			this->lblRefractiveIndex->TabIndex = 3;
-			this->lblRefractiveIndex->Text = L"Refractive index: 1.5";
+			this->lblAngleX->AutoSize = true;
+			this->lblAngleX->Location = System::Drawing::Point(9, 7);
+			this->lblAngleX->Name = L"lblAngleX";
+			this->lblAngleX->Size = System::Drawing::Size(31, 13);
+			this->lblAngleX->TabIndex = 3;
+			this->lblAngleX->Text = L"posX";
 			// 
-			// refractiveTrackBar
+			// posXTrackBar
 			// 
-			this->refractiveTrackBar->Location = System::Drawing::Point(12, 23);
-			this->refractiveTrackBar->Maximum = 50;
-			this->refractiveTrackBar->Name = L"refractiveTrackBar";
-			this->refractiveTrackBar->Size = System::Drawing::Size(260, 45);
-			this->refractiveTrackBar->TabIndex = 4;
-			this->refractiveTrackBar->Value = 15;
-			this->refractiveTrackBar->Scroll += gcnew System::EventHandler(this, &MyForm::trackBar1_Scroll);
+			this->posXTrackBar->Location = System::Drawing::Point(12, 23);
+			this->posXTrackBar->Maximum = 200;
+			this->posXTrackBar->Name = L"posXTrackBar";
+			this->posXTrackBar->Size = System::Drawing::Size(260, 45);
+			this->posXTrackBar->TabIndex = 4;
+			this->posXTrackBar->Value = 100;
 			// 
-			// ratioTrackBar
+			// posYTrackBar
 			// 
-			this->ratioTrackBar->Location = System::Drawing::Point(12, 73);
-			this->ratioTrackBar->Maximum = 100;
-			this->ratioTrackBar->Name = L"ratioTrackBar";
-			this->ratioTrackBar->Size = System::Drawing::Size(260, 45);
-			this->ratioTrackBar->TabIndex = 6;
-			this->ratioTrackBar->Value = 50;
+			this->posYTrackBar->Location = System::Drawing::Point(12, 73);
+			this->posYTrackBar->Maximum = 200;
+			this->posYTrackBar->Name = L"posYTrackBar";
+			this->posYTrackBar->Size = System::Drawing::Size(260, 45);
+			this->posYTrackBar->TabIndex = 6;
+			this->posYTrackBar->Value = 100;
 			// 
-			// label1
+			// lblAngleY
 			// 
-			this->label1->AutoSize = true;
-			this->label1->Location = System::Drawing::Point(9, 57);
-			this->label1->Name = L"label1";
-			this->label1->Size = System::Drawing::Size(41, 13);
-			this->label1->TabIndex = 5;
-			this->label1->Text = L"Reflect";
+			this->lblAngleY->AutoSize = true;
+			this->lblAngleY->Location = System::Drawing::Point(9, 57);
+			this->lblAngleY->Name = L"lblAngleY";
+			this->lblAngleY->Size = System::Drawing::Size(31, 13);
+			this->lblAngleY->TabIndex = 5;
+			this->lblAngleY->Text = L"posY";
 			// 
-			// label2
+			// posZTrackBar
 			// 
-			this->label2->AutoSize = true;
-			this->label2->Location = System::Drawing::Point(231, 57);
-			this->label2->Name = L"label2";
-			this->label2->Size = System::Drawing::Size(42, 13);
-			this->label2->TabIndex = 7;
-			this->label2->Text = L"Refract";
+			this->posZTrackBar->Location = System::Drawing::Point(13, 128);
+			this->posZTrackBar->Maximum = 200;
+			this->posZTrackBar->Name = L"posZTrackBar";
+			this->posZTrackBar->Size = System::Drawing::Size(260, 45);
+			this->posZTrackBar->TabIndex = 9;
+			this->posZTrackBar->Value = 100;
 			// 
-			// label3
+			// lblAngleZ
 			// 
-			this->label3->AutoSize = true;
-			this->label3->Location = System::Drawing::Point(198, 112);
-			this->label3->Name = L"label3";
-			this->label3->Size = System::Drawing::Size(74, 13);
-			this->label3->TabIndex = 10;
-			this->label3->Text = L"Transmittance";
+			this->lblAngleZ->AutoSize = true;
+			this->lblAngleZ->Location = System::Drawing::Point(10, 112);
+			this->lblAngleZ->Name = L"lblAngleZ";
+			this->lblAngleZ->Size = System::Drawing::Size(31, 13);
+			this->lblAngleZ->TabIndex = 8;
+			this->lblAngleZ->Text = L"posZ";
 			// 
-			// textureTrackBar
+			// cbAnimate
 			// 
-			this->textureTrackBar->Location = System::Drawing::Point(13, 128);
-			this->textureTrackBar->Maximum = 100;
-			this->textureTrackBar->Name = L"textureTrackBar";
-			this->textureTrackBar->Size = System::Drawing::Size(260, 45);
-			this->textureTrackBar->TabIndex = 9;
-			this->textureTrackBar->Value = 20;
-			// 
-			// label4
-			// 
-			this->label4->AutoSize = true;
-			this->label4->Location = System::Drawing::Point(10, 112);
-			this->label4->Name = L"label4";
-			this->label4->Size = System::Drawing::Size(43, 13);
-			this->label4->TabIndex = 8;
-			this->label4->Text = L"Texture";
-			// 
-			// rotateCB
-			// 
-			this->rotateCB->AutoSize = true;
-			this->rotateCB->Location = System::Drawing::Point(15, 168);
-			this->rotateCB->Name = L"rotateCB";
-			this->rotateCB->Size = System::Drawing::Size(58, 17);
-			this->rotateCB->TabIndex = 11;
-			this->rotateCB->Text = L"Rotate";
-			this->rotateCB->UseVisualStyleBackColor = true;
-			// 
-			// normalMapCB
-			// 
-			this->normalMapCB->AutoSize = true;
-			this->normalMapCB->Location = System::Drawing::Point(80, 168);
-			this->normalMapCB->Name = L"normalMapCB";
-			this->normalMapCB->Size = System::Drawing::Size(83, 17);
-			this->normalMapCB->TabIndex = 12;
-			this->normalMapCB->Text = L"Normal Map";
-			this->normalMapCB->UseVisualStyleBackColor = true;
+			this->cbAnimate->AutoSize = true;
+			this->cbAnimate->Location = System::Drawing::Point(12, 179);
+			this->cbAnimate->Name = L"cbAnimate";
+			this->cbAnimate->Size = System::Drawing::Size(64, 17);
+			this->cbAnimate->TabIndex = 10;
+			this->cbAnimate->Text = L"Animate";
+			this->cbAnimate->UseVisualStyleBackColor = true;
 			// 
 			// MyForm
 			// 
 			this->AutoScaleDimensions = System::Drawing::SizeF(6, 13);
 			this->AutoScaleMode = System::Windows::Forms::AutoScaleMode::Font;
 			this->ClientSize = System::Drawing::Size(284, 322);
-			this->Controls->Add(this->normalMapCB);
-			this->Controls->Add(this->rotateCB);
-			this->Controls->Add(this->label3);
-			this->Controls->Add(this->textureTrackBar);
-			this->Controls->Add(this->label4);
-			this->Controls->Add(this->label2);
-			this->Controls->Add(this->ratioTrackBar);
-			this->Controls->Add(this->label1);
-			this->Controls->Add(this->refractiveTrackBar);
-			this->Controls->Add(this->lblRefractiveIndex);
+			this->Controls->Add(this->cbAnimate);
+			this->Controls->Add(this->posZTrackBar);
+			this->Controls->Add(this->lblAngleZ);
+			this->Controls->Add(this->posYTrackBar);
+			this->Controls->Add(this->lblAngleY);
+			this->Controls->Add(this->posXTrackBar);
+			this->Controls->Add(this->lblAngleX);
 			this->Name = L"MyForm";
-			this->Text = L"Assignment #2";
-			(cli::safe_cast<System::ComponentModel::ISupportInitialize^  >(this->refractiveTrackBar))->EndInit();
-			(cli::safe_cast<System::ComponentModel::ISupportInitialize^  >(this->ratioTrackBar))->EndInit();
-			(cli::safe_cast<System::ComponentModel::ISupportInitialize^  >(this->textureTrackBar))->EndInit();
+			this->Text = L"Assignment #3 (IK)";
+			(cli::safe_cast<System::ComponentModel::ISupportInitialize^  >(this->posXTrackBar))->EndInit();
+			(cli::safe_cast<System::ComponentModel::ISupportInitialize^  >(this->posYTrackBar))->EndInit();
+			(cli::safe_cast<System::ComponentModel::ISupportInitialize^  >(this->posZTrackBar))->EndInit();
 			this->ResumeLayout(false);
 			this->PerformLayout();
 
 		}
 #pragma endregion
-	private: System::Void trackBar1_Scroll(System::Object^  sender, System::EventArgs^  e) {
-				 lblRefractiveIndex->Text = "Refractive index: " + (refractiveTrackBar->Value / 10.0f).ToString();
-			 }
 };
 }

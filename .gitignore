@@ -1,6 +1,8 @@
 *.sdf
 *.suo
 *.opensdf
+*.exe
+*.pdb
 
 build/
 /models

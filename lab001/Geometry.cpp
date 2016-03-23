@@ -9,6 +9,10 @@ Geometry::Geometry(Shader* shader, glm::vec3 position,
 	this->_shader = shader;
 	this->_modelMatrix = glm::mat4();
 	this->_modelMatrix = glm::translate(this->_modelMatrix, position);
+	this->quaternion = glm::quat();
+
+	int attribSize = texturePath ? 8 : 6;
+	this->_triangleCount = sizeOfVertices / attribSize;
 
 	/* Get GL to allocate space for our array buffers */
 	glGenVertexArrays(1, &this->_VAO);
@@ -28,8 +32,6 @@ Geometry::Geometry(Shader* shader, glm::vec3 position,
 
 	//glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), NULL);
 	//glEnableVertexAttribArray(0);
-
-	int attribSize = texturePath ? 8 : 6;
 
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, attribSize * sizeof(GLfloat), NULL);
 	glEnableVertexAttribArray(0);
@@ -51,19 +53,13 @@ Geometry::Geometry(Shader* shader, glm::vec3 position,
 
 void Geometry::draw()
 {
-	/* If this cube has a shader, use it */
-	if (this->_shader != NULL)
-	{
-		this->_shader->enableShader();
-		this->_shader->setUniformMatrix4fv("model", this->_modelMatrix);
-	}
-
 	/* Tell GL we want to work on our VAO */
 	glBindVertexArray(this->_VAO);
 	if (this->textureId) {
+		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, this->textureId);
 	}
-	glDrawArrays(GL_TRIANGLES, 0, 6 * 6);
+	glDrawArrays(GL_TRIANGLES, 0, this->_triangleCount);
 	glBindVertexArray(0);
 }
 
@@ -93,6 +89,26 @@ void Geometry::rotate(glm::vec3 rotation)
 	this->_modelMatrix = glm::rotate(this->_modelMatrix, rotation.z, glm::vec3(0.0f, 0.0f, 1.0f));
 }
 
+void Geometry::setRotationFromQuaternion(glm::quat quat) 
+{
+	auto position = this->getPosition();
+	this->_modelMatrix = glm::mat4_cast(quat);
+	this->setPosition(position);
+	this->quaternion = quat;
+}
+
+glm::vec3 Geometry::getUpVector()
+{
+	auto upMatrix = this->_modelMatrix[1];
+	return glm::vec3(upMatrix.x, upMatrix.y, upMatrix.z);
+}
+
+glm::vec3 Geometry::getPosition()
+{
+	auto upMatrix = this->_modelMatrix[3];
+	return glm::vec3(upMatrix.x, upMatrix.y, upMatrix.z);
+}
+
 void Geometry::move(glm::vec3 vector) 
 {
 	this->_modelMatrix = glm::translate(this->_modelMatrix, vector);
@@ -100,13 +116,21 @@ void Geometry::move(glm::vec3 vector)
 
 void Geometry::setPosition(glm::vec3 position) 
 {
-	glm::mat4 initialPos;
-	this->_modelMatrix = glm::translate(initialPos, position);
+	if (position.x == position.x) {
+		this->_modelMatrix[3] = glm::vec4(position, 1);
+	} else {
+		throw;
+	}
 }
 
 void Geometry::scale(glm::vec3 scale)
 {
 	this->_modelMatrix = glm::scale(this->_modelMatrix, scale);
+}
+
+glm::vec3 Geometry::localToWorld(glm::vec3 localPoint)
+{
+	return glm::vec3(this->_modelMatrix * glm::vec4(localPoint, 1));
 }
 
 // This function loads a texture from file. Note: texture loading functions like these are usually 

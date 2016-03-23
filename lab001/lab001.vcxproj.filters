@@ -41,6 +41,9 @@
     <ClCompile Include="MyForm.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Cone.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Shader.hpp">
@@ -65,6 +68,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Plane.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Cone.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -144,6 +150,12 @@
       <Filter>Shaders</Filter>
     </None>
     <None Include="shaders\reflectAndRefract.vert">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="shaders\shadow.frag">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="shaders\shadow.vert">
       <Filter>Shaders</Filter>
     </None>
   </ItemGroup>
