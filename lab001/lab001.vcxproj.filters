@@ -158,5 +158,11 @@
     <None Include="shaders\shadow.vert">
       <Filter>Shaders</Filter>
     </None>
+    <None Include="shaders\simpleDepth.frag">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="shaders\simpleDepth.vert">
+      <Filter>Shaders</Filter>
+    </None>
   </ItemGroup>
 </Project>

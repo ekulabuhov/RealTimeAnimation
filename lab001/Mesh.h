@@ -27,20 +27,53 @@ struct Texture {
     aiString path;
 };
 
+struct Bone {
+	glm::vec3 Position;
+};
+
+#define NUM_BONES_PER_VEREX 4
+#define ARRAY_SIZE_IN_ELEMENTS(a) (sizeof(a)/sizeof(a[0]))
+
+struct VertexBoneData {
+	GLuint IDs[NUM_BONES_PER_VEREX];
+	float Weights[NUM_BONES_PER_VEREX];
+
+	void AddBoneData(GLuint BoneID, float Weight) {
+		for (GLuint i = 0 ; i < ARRAY_SIZE_IN_ELEMENTS(IDs) ; i++) {
+			if (Weights[i] == 0.0) {
+				IDs[i]     = BoneID;
+				Weights[i] = Weight;
+				return;
+			}        
+		}
+    
+		// should never get here - more bones than we have space for
+		//assert(0);
+	}
+};
+
+struct BoneInfo
+{
+	glm::mat4 BoneOffset;
+    glm::mat4 FinalTransformation;        
+};
+
 class Mesh {
 public:
     /*  Mesh Data  */
     vector<Vertex> vertices;
     vector<GLuint> indices;
     vector<Texture> textures;
+	vector<VertexBoneData> bones;
 
     /*  Functions  */
     // Constructor
-    Mesh(vector<Vertex> vertices, vector<GLuint> indices, vector<Texture> textures)
+    Mesh(vector<Vertex> vertices, vector<GLuint> indices, vector<Texture> textures, vector<VertexBoneData> bones)
     {
         this->vertices = vertices;
         this->indices = indices;
         this->textures = textures;
+		this->bones = bones;
 
         // Now that we have all the required data, set the vertex buffers and its attribute pointers.
         this->setupMesh();
@@ -88,7 +121,7 @@ public:
 
 private:
     /*  Render data  */
-    GLuint VAO, VBO, EBO;
+    GLuint VAO, VBO, EBO, BONE_VB;
 
     /*  Functions    */
     // Initializes all the buffer objects/arrays
@@ -107,6 +140,7 @@ private:
         // again translates to 3/2 floats which translates to a byte array.
         glBufferData(GL_ARRAY_BUFFER, this->vertices.size() * sizeof(Vertex), &this->vertices[0], GL_STATIC_DRAW);  
 
+		// Face indices
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, this->EBO);
         glBufferData(GL_ELEMENT_ARRAY_BUFFER, this->indices.size() * sizeof(GLuint), &this->indices[0], GL_STATIC_DRAW);
 
@@ -120,6 +154,16 @@ private:
         // Vertex Texture Coords
         glEnableVertexAttribArray(2);	
         glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (GLvoid*)offsetof(Vertex, TexCoords));
+
+		// Vertex Bones
+		glGenBuffers(1, &this->BONE_VB);
+		glBindBuffer(GL_ARRAY_BUFFER, this->BONE_VB);
+		glBufferData(GL_ARRAY_BUFFER, this->bones.size() * sizeof(VertexBoneData), &this->bones[0], GL_STATIC_DRAW);
+		glEnableVertexAttribArray(3);
+		glVertexAttribIPointer(3, 4, GL_INT, sizeof(VertexBoneData), (const GLvoid*)0);
+		// Vertex Bone Weights
+		glEnableVertexAttribArray(4);
+		glVertexAttribPointer(4, 4, GL_FLOAT, GL_FALSE, sizeof(VertexBoneData), (const GLvoid*)16);
 
         glBindVertexArray(0);
     }

@@ -11,6 +11,8 @@ using namespace std;
 #include <GL/glew.h> // Contains all the necessery OpenGL includes
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtx/transform.hpp>
+#include <glm/gtc/matrix_transform.hpp>
 #include <SOIL.h>
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>
@@ -27,6 +29,10 @@ public:
     // Constructor, expects a filepath to a 3D model.
     Model(GLchar* path)
     {
+		m_NumBones = 0;
+		_animationIndex = 0;
+		scene = NULL;
+
         this->loadModel(path);
     }
 
@@ -36,6 +42,17 @@ public:
 		shader.setUniformMatrix4fv("model", this->_modelMatrix);
         for(GLuint i = 0; i < this->meshes.size(); i++)
             this->meshes[i].Draw(shader);
+    }
+
+	void Draw(Shader shader, vector<glm::mat4>& Transforms)
+    {
+		for (GLuint i = 0 ; i < Transforms.size() ; i++) {
+			char Name[128];
+			memset(Name, 0, sizeof(Name));
+			_snprintf_s(Name, sizeof(Name), "gBones[%d]", i);
+            shader.setUniformMatrix4fv(Name, Transforms[i]);
+        }
+		this->Draw(shader);
     }
 
 	void Rotate(glm::vec3 rotation)
@@ -58,6 +75,37 @@ public:
 	void SetModelMatrix(glm::mat4 m) {
 		this->_modelMatrix = m;
 	}
+
+	void SetAnimationIndex(int index) {
+		this->_animationIndex = index;
+	}
+
+	void BoneTransform(vector<glm::mat4>& Transforms) {
+		glm::mat4 Identity(1.0f);
+		ReadNodeHeirarchy(scene->mRootNode, Identity);
+
+		Transforms.resize(m_NumBones);
+
+		for (GLuint i = 0 ; i < m_NumBones ; i++) {
+			Transforms[i] = m_BoneInfo[i].FinalTransformation;
+		}
+	}
+
+	void BoneTransform(float TimeInSeconds, vector<glm::mat4>& Transforms) {
+		glm::mat4 Identity(1.0f);
+
+		float TicksPerSecond = scene->mAnimations[_animationIndex]->mTicksPerSecond != 0 ? scene->mAnimations[_animationIndex]->mTicksPerSecond : 25.0f;
+		float TimeInTicks = TimeInSeconds * TicksPerSecond;
+		float AnimationTime = fmod(TimeInTicks, scene->mAnimations[_animationIndex]->mDuration);
+
+		ReadNodeHeirarchy(AnimationTime, scene->mRootNode, Identity, _animationIndex);
+
+		Transforms.resize(m_NumBones);
+
+		for (GLuint i = 0 ; i < m_NumBones ; i++) {
+			Transforms[i] = m_BoneInfo[i].FinalTransformation;
+		}
+	}
     
 private:
     /*  Model Data  */
@@ -66,19 +114,31 @@ private:
     vector<Texture> textures_loaded;	// Stores all the textures loaded so far, optimization to make sure textures aren't loaded more than once.
 	glm::mat4 _modelMatrix;
 
+	map<string,GLuint> m_BoneMapping; // maps a bone name to its index
+	GLuint m_NumBones;
+	vector<BoneInfo> m_BoneInfo;
+	glm::mat4 m_GlobalInverseTransform;
+
+	const aiScene* scene;
+	Assimp::Importer importer;
+	int _animationIndex;
+
     /*  Functions   */
     // Loads a model with supported ASSIMP extensions from file and stores the resulting meshes in the meshes vector.
     void loadModel(string path)
     {
         // Read file via ASSIMP
-        Assimp::Importer importer;
-        const aiScene* scene = importer.ReadFile(path, aiProcess_Triangulate | aiProcess_FlipUVs);
+        scene = importer.ReadFile(path, aiProcess_Triangulate | aiProcess_GenSmoothNormals | aiProcess_FlipUVs);
         // Check for errors
         if(!scene || scene->mFlags == AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) // if is Not Zero
         {
             cout << "ERROR::ASSIMP:: " << importer.GetErrorString() << endl;
             return;
         }
+
+		_aiMatrixToGlm(scene->mRootNode->mTransformation, m_GlobalInverseTransform);
+		m_GlobalInverseTransform = glm::inverse(m_GlobalInverseTransform);
+
         // Retrieve the directory path of the filepath
         this->directory = path.substr(0, path.find_last_of('/'));
 
@@ -105,12 +165,217 @@ private:
 
     }
 
+	// Recursive function
+	void ReadNodeHeirarchy(const aiNode* pNode, const glm::mat4& ParentTransform) {
+		string NodeName(pNode->mName.data);
+
+		glm::mat4 NodeTransformation;
+		_aiMatrixToGlm(pNode->mTransformation, NodeTransformation);
+
+		glm::mat4 TranslationM;
+		glm::mat4 RotationM;
+		glm::mat4 ScallingM;
+
+		if (NodeName == "Bone.003") {
+			glm::vec3 EulerAngles(0, 0, glm::radians(90.0f));
+			glm::quat MyQuaternion(EulerAngles);
+			RotationM *= glm::mat4_cast(MyQuaternion);
+		}
+		NodeTransformation *= TranslationM * RotationM * ScallingM;
+
+		glm::mat4 GlobalTransformation = ParentTransform * NodeTransformation;
+
+		if (m_BoneMapping.find(NodeName) != m_BoneMapping.end()) {
+			GLuint BoneIndex = m_BoneMapping[NodeName];
+			m_BoneInfo[BoneIndex].FinalTransformation = m_GlobalInverseTransform * GlobalTransformation * m_BoneInfo[BoneIndex].BoneOffset;
+		}
+
+		for (GLuint i = 0; i < pNode->mNumChildren; i++) {
+			ReadNodeHeirarchy(pNode->mChildren[i], GlobalTransformation);
+		}
+	}
+
+	const aiNodeAnim* FindNodeAnim(const aiAnimation* pAnimation, const string NodeName)
+	{
+		for (GLuint i = 0 ; i < pAnimation->mNumChannels ; i++) {
+			const aiNodeAnim* pNodeAnim = pAnimation->mChannels[i];
+        
+			if (string(pNodeAnim->mNodeName.data) == NodeName) {
+				return pNodeAnim;
+			}
+		}
+    
+		return NULL;
+	}
+
+	GLuint FindScaling(float AnimationTime, const aiNodeAnim* pNodeAnim)
+	{
+		assert(pNodeAnim->mNumScalingKeys > 0);
+    
+		for (GLuint i = 0 ; i < pNodeAnim->mNumScalingKeys - 1 ; i++) {
+			if (AnimationTime < (float)pNodeAnim->mScalingKeys[i + 1].mTime) {
+				return i;
+			}
+		}
+    
+		assert(0);
+
+		return 0;
+	}
+
+	void CalcInterpolatedScaling(aiVector3D& Out, float AnimationTime, const aiNodeAnim* pNodeAnim)
+	{
+		if (pNodeAnim->mNumScalingKeys == 1) {
+			Out = pNodeAnim->mScalingKeys[0].mValue;
+			return;
+		}
+
+		GLuint ScalingIndex = FindScaling(AnimationTime, pNodeAnim);
+		GLuint NextScalingIndex = (ScalingIndex + 1);
+		assert(NextScalingIndex < pNodeAnim->mNumScalingKeys);
+		float DeltaTime = (float)(pNodeAnim->mScalingKeys[NextScalingIndex].mTime - pNodeAnim->mScalingKeys[ScalingIndex].mTime);
+		float Factor = (AnimationTime - (float)pNodeAnim->mScalingKeys[ScalingIndex].mTime) / DeltaTime;
+		assert(Factor >= 0.0f && Factor <= 1.0f);
+		const aiVector3D& Start = pNodeAnim->mScalingKeys[ScalingIndex].mValue;
+		const aiVector3D& End   = pNodeAnim->mScalingKeys[NextScalingIndex].mValue;
+		aiVector3D Delta = End - Start;
+		Out = Start + Factor * Delta;
+	}
+
+	GLuint FindRotation(float AnimationTime, const aiNodeAnim* pNodeAnim)
+	{
+		assert(pNodeAnim->mNumRotationKeys > 0);
+
+		for (GLuint i = 0 ; i < pNodeAnim->mNumRotationKeys - 1 ; i++) {
+			if (AnimationTime < (float)pNodeAnim->mRotationKeys[i + 1].mTime) {
+				return i;
+			}
+		}
+    
+		assert(0);
+
+		return 0;
+	}
+
+	void CalcInterpolatedRotation(aiQuaternion& Out, float AnimationTime, const aiNodeAnim* pNodeAnim)
+	{
+		// we need at least two values to interpolate...
+		if (pNodeAnim->mNumRotationKeys == 1) {
+			Out = pNodeAnim->mRotationKeys[0].mValue;
+			return;
+		}
+    
+		GLuint RotationIndex = FindRotation(AnimationTime, pNodeAnim);
+		GLuint NextRotationIndex = (RotationIndex + 1);
+		assert(NextRotationIndex < pNodeAnim->mNumRotationKeys);
+		float DeltaTime = (float)(pNodeAnim->mRotationKeys[NextRotationIndex].mTime - pNodeAnim->mRotationKeys[RotationIndex].mTime);
+		float Factor = (AnimationTime - (float)pNodeAnim->mRotationKeys[RotationIndex].mTime) / DeltaTime;
+		assert(Factor >= 0.0f && Factor <= 1.0f);
+		const aiQuaternion& StartRotationQ = pNodeAnim->mRotationKeys[RotationIndex].mValue;
+		const aiQuaternion& EndRotationQ   = pNodeAnim->mRotationKeys[NextRotationIndex].mValue;    
+		aiQuaternion::Interpolate(Out, StartRotationQ, EndRotationQ, Factor);
+		Out = Out.Normalize();
+	}
+
+	GLuint FindPosition(float AnimationTime, const aiNodeAnim* pNodeAnim)
+	{    
+		for (GLuint i = 0 ; i < pNodeAnim->mNumPositionKeys - 1 ; i++) {
+			if (AnimationTime < (float)pNodeAnim->mPositionKeys[i + 1].mTime) {
+				return i;
+			}
+		}
+    
+		assert(0);
+
+		return 0;
+	}
+
+	void CalcInterpolatedPosition(aiVector3D& Out, float AnimationTime, const aiNodeAnim* pNodeAnim)
+	{
+		if (pNodeAnim->mNumPositionKeys == 1) {
+			Out = pNodeAnim->mPositionKeys[0].mValue;
+			return;
+		}
+            
+		GLuint PositionIndex = FindPosition(AnimationTime, pNodeAnim);
+		GLuint NextPositionIndex = (PositionIndex + 1);
+		assert(NextPositionIndex < pNodeAnim->mNumPositionKeys);
+		float DeltaTime = (float)(pNodeAnim->mPositionKeys[NextPositionIndex].mTime - pNodeAnim->mPositionKeys[PositionIndex].mTime);
+		float Factor = (AnimationTime - (float)pNodeAnim->mPositionKeys[PositionIndex].mTime) / DeltaTime;
+		assert(Factor >= 0.0f && Factor <= 1.0f);
+		const aiVector3D& Start = pNodeAnim->mPositionKeys[PositionIndex].mValue;
+		const aiVector3D& End = pNodeAnim->mPositionKeys[NextPositionIndex].mValue;
+		aiVector3D Delta = End - Start;
+		Out = Start + Factor * Delta;
+	}
+
+	// Recursive function
+	void ReadNodeHeirarchy(float AnimationTime, const aiNode* pNode, const glm::mat4& ParentTransform, int animationIndex) {
+		string NodeName(pNode->mName.data);
+
+		const aiAnimation* pAnimation = scene->mAnimations[animationIndex];
+
+		glm::mat4 NodeTransformation;
+		_aiMatrixToGlm(pNode->mTransformation, NodeTransformation);
+
+		const aiNodeAnim* pNodeAnim = FindNodeAnim(pAnimation, NodeName);
+			
+		if (pNodeAnim) {
+			// Interpolate scaling and generate scaling transformation matrix
+			aiVector3D Scaling;
+			CalcInterpolatedScaling(Scaling, AnimationTime, pNodeAnim);
+			glm::mat4 ScallingM = glm::scale(glm::vec3(Scaling.x, Scaling.y, Scaling.z));
+
+			// Interpolate rotation and generate rotation transformation matrix
+			aiQuaternion RotationQ;
+			CalcInterpolatedRotation(RotationQ, AnimationTime, pNodeAnim);        
+			glm::mat4 RotationM;
+			_aiMatrixToGlm(RotationQ.GetMatrix(), RotationM);
+
+			//if (NodeName == "Fbx01_R_UpperArm") {
+			//	glm::vec3 EulerAngles(0, 0, glm::radians(90.0f));
+			//	glm::quat MyQuaternion(EulerAngles);
+			//	RotationM = glm::mat4_cast(MyQuaternion);
+			//}
+
+			// Interpolate translation and generate translation transformation matrix
+			aiVector3D Translation;
+			CalcInterpolatedPosition(Translation, AnimationTime, pNodeAnim);
+			glm::mat4 TranslationM = glm::translate(glm::vec3(Translation.x, Translation.y, Translation.z));
+
+			NodeTransformation = TranslationM * RotationM * ScallingM;
+		}	
+
+		glm::mat4 GlobalTransformation = ParentTransform * NodeTransformation;
+
+		if (m_BoneMapping.find(NodeName) != m_BoneMapping.end()) {
+			GLuint BoneIndex = m_BoneMapping[NodeName];
+			glm::mat4 result = m_GlobalInverseTransform * GlobalTransformation * m_BoneInfo[BoneIndex].BoneOffset;
+			m_BoneInfo[BoneIndex].FinalTransformation = m_GlobalInverseTransform * GlobalTransformation * m_BoneInfo[BoneIndex].BoneOffset;
+		}
+
+		for (GLuint i = 0; i < pNode->mNumChildren; i++) {
+			ReadNodeHeirarchy(AnimationTime, pNode->mChildren[i], GlobalTransformation, animationIndex);
+		}
+	}
+
     Mesh processMesh(aiMesh* mesh, const aiScene* scene)
     {
         // Data to fill
         vector<Vertex> vertices;
         vector<GLuint> indices;
         vector<Texture> textures;
+		vector<VertexBoneData> bones;
+
+		GLuint NumVertices = 0;
+
+		// Count the number of vertices and indices
+		for (GLuint i = 0 ; i < scene->mNumMeshes ; i++) {        
+			NumVertices += scene->mMeshes[i]->mNumVertices;
+		}
+
+		// Reserve space in the vectors for the vertex attributes and indices
+		bones.resize(NumVertices);
 
         // Walk through each of the mesh's vertices
         for(GLuint i = 0; i < mesh->mNumVertices; i++)
@@ -141,6 +406,41 @@ private:
                 vertex.TexCoords = glm::vec2(0.0f, 0.0f);
             vertices.push_back(vertex);
         }
+
+		
+		// Load bones
+		for(GLuint i = 0; i < mesh->mNumBones; i++) 
+		{
+			GLuint BoneIndex = 0;
+			string BoneName(mesh->mBones[i]->mName.data);
+
+			if (m_BoneMapping.find(BoneName) == m_BoneMapping.end()) {
+				// Allocate an index for a new bone
+				BoneIndex = m_NumBones;
+				m_NumBones++;
+
+				BoneInfo bi;
+				m_BoneInfo.push_back(bi);
+				//m_BoneInfo[BoneIndex].BoneOffset = mesh->mBones[i]->mOffsetMatrix;
+				_aiMatrixToGlm(mesh->mBones[i]->mOffsetMatrix, m_BoneInfo[BoneIndex].BoneOffset);
+				//m_BoneInfo[BoneIndex].BoneOffset = glm::transpose(m_BoneInfo[BoneIndex].BoneOffset);
+				m_BoneMapping[BoneName] = BoneIndex;
+			}
+			else 
+			{
+				BoneIndex = m_BoneMapping[BoneName];
+			}
+
+			for (GLuint j = 0; j < mesh->mBones[i]->mNumWeights; j++) 
+			{
+				//GLuint VertexID = m_Entries[MeshIndex].BaseVertex + pMesh->mBones[i]->mWeights[j].mVertexId;
+				GLuint VertexID = 0 + mesh->mBones[i]->mWeights[j].mVertexId;
+				float Weight  = mesh->mBones[i]->mWeights[j].mWeight;                   
+				bones[VertexID].AddBoneData(BoneIndex, Weight);
+			}
+		}
+
+
         // Now wak through each of the mesh's faces (a face is a mesh its triangle) and retrieve the corresponding vertex indices.
         for(GLuint i = 0; i < mesh->mNumFaces; i++)
         {
@@ -169,8 +469,30 @@ private:
         }
         
         // Return a mesh object created from the extracted mesh data
-        return Mesh(vertices, indices, textures);
+        return Mesh(vertices, indices, textures, bones);
     }
+
+	void _aiMatrixToGlm(const aiMatrix4x4 &aiMat, glm::mat4 &glmMat)
+	{
+        //inverse from row-major to column-major
+		aiMatrix4x4 temp = aiMat;
+		temp.Transpose();
+
+		for(int i = 0; i < 4; i++)
+			for(int j = 0; j < 4; j++)
+				glmMat[i][j] = temp[i][j];
+	}
+
+	void _aiMatrixToGlm(const aiMatrix3x3 &aiMat, glm::mat4 &glmMat)
+	{
+		//inverse from row-major to column-major
+		aiMatrix3x3 temp = aiMat;
+		temp.Transpose();
+
+		for(int i = 0; i < 3; i++)
+			for(int j = 0; j < 3; j++)
+				glmMat[i][j] = temp[i][j];
+	}
 
     // Checks all material textures of a given type and loads the textures if they're not loaded yet.
     // The required info is returned as a Texture struct.
@@ -216,8 +538,8 @@ GLint TextureFromFile(const char* path, string directory)
     filename = directory + '/' + filename;
     GLuint textureID;
     glGenTextures(1, &textureID);
-    int width,height;
-    unsigned char* image = SOIL_load_image(filename.c_str(), &width, &height, 0, SOIL_LOAD_RGB);
+    int width,height,channels;
+    unsigned char* image = SOIL_load_image(filename.c_str(), &width, &height, &channels, SOIL_LOAD_RGB);
     // Assign texture to ID
     glBindTexture(GL_TEXTURE_2D, textureID);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, image);

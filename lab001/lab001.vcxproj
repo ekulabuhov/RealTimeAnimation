@@ -14,6 +14,7 @@
     <ProjectGuid>{B7FCFAE1-33B3-4B39-B4F8-2C7D42056E9A}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>lab001</RootNamespace>
+    <ProjectName>Assignment4-Final</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -150,6 +151,8 @@ copy /Y "$(SolutionDir)build\$(Configuration)\lab001.pdb" "$(SolutionDir)lab001"
     <None Include="shaders\shadow.vert" />
     <None Include="shaders\simple.frag" />
     <None Include="shaders\simple.vert" />
+    <None Include="shaders\simpleDepth.frag" />
+    <None Include="shaders\simpleDepth.vert" />
     <None Include="shaders\simpleReflect.frag" />
     <None Include="shaders\simpleReflect.vert" />
     <None Include="shaders\skybox.frag" />

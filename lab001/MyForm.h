@@ -34,15 +34,20 @@ namespace lab001 {
 				delete components;
 			}
 		}
-	public: System::Windows::Forms::Label^  lblAngleX;
-	public: System::Windows::Forms::TrackBar^  posXTrackBar;
-	public: System::Windows::Forms::TrackBar^  posYTrackBar;
+	public: System::Windows::Forms::ComboBox^  animationDropDown;
+	protected: 
+
+	protected: 
+	private: System::Windows::Forms::Label^  label1;
+
+
+
 	protected:
 
 
 
-	public: System::Windows::Forms::Label^  lblAngleY;
-	public: System::Windows::Forms::TrackBar^  posZTrackBar;
+
+
 	private:
 	protected:
 
@@ -52,8 +57,8 @@ namespace lab001 {
 
 
 
-	public: System::Windows::Forms::Label^  lblAngleZ;
-	public: System::Windows::Forms::CheckBox^  cbAnimate;
+
+
 
 	public: 
 
@@ -106,103 +111,48 @@ namespace lab001 {
 		/// </summary>
 		void InitializeComponent(void)
 		{
-			this->lblAngleX = (gcnew System::Windows::Forms::Label());
-			this->posXTrackBar = (gcnew System::Windows::Forms::TrackBar());
-			this->posYTrackBar = (gcnew System::Windows::Forms::TrackBar());
-			this->lblAngleY = (gcnew System::Windows::Forms::Label());
-			this->posZTrackBar = (gcnew System::Windows::Forms::TrackBar());
-			this->lblAngleZ = (gcnew System::Windows::Forms::Label());
-			this->cbAnimate = (gcnew System::Windows::Forms::CheckBox());
-			(cli::safe_cast<System::ComponentModel::ISupportInitialize^  >(this->posXTrackBar))->BeginInit();
-			(cli::safe_cast<System::ComponentModel::ISupportInitialize^  >(this->posYTrackBar))->BeginInit();
-			(cli::safe_cast<System::ComponentModel::ISupportInitialize^  >(this->posZTrackBar))->BeginInit();
+			this->animationDropDown = (gcnew System::Windows::Forms::ComboBox());
+			this->label1 = (gcnew System::Windows::Forms::Label());
 			this->SuspendLayout();
 			// 
-			// lblAngleX
+			// animationDropDown
 			// 
-			this->lblAngleX->AutoSize = true;
-			this->lblAngleX->Location = System::Drawing::Point(9, 7);
-			this->lblAngleX->Name = L"lblAngleX";
-			this->lblAngleX->Size = System::Drawing::Size(31, 13);
-			this->lblAngleX->TabIndex = 3;
-			this->lblAngleX->Text = L"posX";
+			this->animationDropDown->DropDownStyle = System::Windows::Forms::ComboBoxStyle::DropDownList;
+			this->animationDropDown->FormattingEnabled = true;
+			this->animationDropDown->Items->AddRange(gcnew cli::array< System::Object^  >(16) {L"Idle", L"Idle with gun", L"Idle with gun aiming", 
+				L"Idle with gun firing", L"Kneel firing", L"Kneel idle", L"Jump", L"Kick ball", L"Chicken Dance", L"Cat", L"Salsa", L"Run", L"Run with gun", 
+				L"T-Pose", L"Walk", L"Walk with gun"});
+			this->animationDropDown->Location = System::Drawing::Point(74, 20);
+			this->animationDropDown->Name = L"animationDropDown";
+			this->animationDropDown->Size = System::Drawing::Size(197, 21);
+			this->animationDropDown->TabIndex = 0;
 			// 
-			// posXTrackBar
+			// label1
 			// 
-			this->posXTrackBar->Location = System::Drawing::Point(12, 23);
-			this->posXTrackBar->Maximum = 200;
-			this->posXTrackBar->Name = L"posXTrackBar";
-			this->posXTrackBar->Size = System::Drawing::Size(260, 45);
-			this->posXTrackBar->TabIndex = 4;
-			this->posXTrackBar->Value = 100;
-			// 
-			// posYTrackBar
-			// 
-			this->posYTrackBar->Location = System::Drawing::Point(12, 73);
-			this->posYTrackBar->Maximum = 200;
-			this->posYTrackBar->Name = L"posYTrackBar";
-			this->posYTrackBar->Size = System::Drawing::Size(260, 45);
-			this->posYTrackBar->TabIndex = 6;
-			this->posYTrackBar->Value = 100;
-			// 
-			// lblAngleY
-			// 
-			this->lblAngleY->AutoSize = true;
-			this->lblAngleY->Location = System::Drawing::Point(9, 57);
-			this->lblAngleY->Name = L"lblAngleY";
-			this->lblAngleY->Size = System::Drawing::Size(31, 13);
-			this->lblAngleY->TabIndex = 5;
-			this->lblAngleY->Text = L"posY";
-			// 
-			// posZTrackBar
-			// 
-			this->posZTrackBar->Location = System::Drawing::Point(13, 128);
-			this->posZTrackBar->Maximum = 200;
-			this->posZTrackBar->Name = L"posZTrackBar";
-			this->posZTrackBar->Size = System::Drawing::Size(260, 45);
-			this->posZTrackBar->TabIndex = 9;
-			this->posZTrackBar->Value = 100;
-			// 
-			// lblAngleZ
-			// 
-			this->lblAngleZ->AutoSize = true;
-			this->lblAngleZ->Location = System::Drawing::Point(10, 112);
-			this->lblAngleZ->Name = L"lblAngleZ";
-			this->lblAngleZ->Size = System::Drawing::Size(31, 13);
-			this->lblAngleZ->TabIndex = 8;
-			this->lblAngleZ->Text = L"posZ";
-			// 
-			// cbAnimate
-			// 
-			this->cbAnimate->AutoSize = true;
-			this->cbAnimate->Location = System::Drawing::Point(12, 179);
-			this->cbAnimate->Name = L"cbAnimate";
-			this->cbAnimate->Size = System::Drawing::Size(64, 17);
-			this->cbAnimate->TabIndex = 10;
-			this->cbAnimate->Text = L"Animate";
-			this->cbAnimate->UseVisualStyleBackColor = true;
+			this->label1->AutoSize = true;
+			this->label1->Location = System::Drawing::Point(12, 23);
+			this->label1->Name = L"label1";
+			this->label1->Size = System::Drawing::Size(56, 13);
+			this->label1->TabIndex = 1;
+			this->label1->Text = L"Animation:";
 			// 
 			// MyForm
 			// 
 			this->AutoScaleDimensions = System::Drawing::SizeF(6, 13);
 			this->AutoScaleMode = System::Windows::Forms::AutoScaleMode::Font;
 			this->ClientSize = System::Drawing::Size(284, 322);
-			this->Controls->Add(this->cbAnimate);
-			this->Controls->Add(this->posZTrackBar);
-			this->Controls->Add(this->lblAngleZ);
-			this->Controls->Add(this->posYTrackBar);
-			this->Controls->Add(this->lblAngleY);
-			this->Controls->Add(this->posXTrackBar);
-			this->Controls->Add(this->lblAngleX);
+			this->Controls->Add(this->label1);
+			this->Controls->Add(this->animationDropDown);
 			this->Name = L"MyForm";
-			this->Text = L"Assignment #3 (IK)";
-			(cli::safe_cast<System::ComponentModel::ISupportInitialize^  >(this->posXTrackBar))->EndInit();
-			(cli::safe_cast<System::ComponentModel::ISupportInitialize^  >(this->posYTrackBar))->EndInit();
-			(cli::safe_cast<System::ComponentModel::ISupportInitialize^  >(this->posZTrackBar))->EndInit();
+			this->Text = L"Assignment #4 (Final)";
+			this->Load += gcnew System::EventHandler(this, &MyForm::MyForm_Load);
 			this->ResumeLayout(false);
 			this->PerformLayout();
 
 		}
 #pragma endregion
+private: System::Void MyForm_Load(System::Object^  sender, System::EventArgs^  e) {
+			 this->animationDropDown->SelectedIndex = 0;
+		 }
 };
 }

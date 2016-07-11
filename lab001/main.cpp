@@ -25,7 +25,7 @@ void do_movement();
 void RenderScene(Shader shader);
 
 // Camera
-Camera camera(glm::vec3(3.0f, 0.5f, 5.0f));
+Camera camera(glm::vec3(0.0f, 0.5f, 5.0f));
 
 // Properties
 GLuint SCR_WIDTH = 800, SCR_HEIGHT = 800;
@@ -35,9 +35,8 @@ Cube *cube1, *lamp;
 Plane* plane1;
 Cone *cone1, *cone2, *cone3;
 CubeMap* cubeMap;
-Model* dragonModel;
+Model *dragonModel, *bobModel;
 bool keys[1024];
-int xRot, yRot, zRot = 0;
 GLfloat fov = 45.0f;
 glm::mat4 projectionMatrix;
 glm::mat4 viewMatrix;
@@ -70,7 +69,7 @@ bool initWindow()
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 2);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-	window = glfwCreateWindow(800, 800, "Assignment #3 (IK)", NULL, NULL);
+	window = glfwCreateWindow(800, 800, "Assignment #4 (Final) - OpenGL", NULL, NULL);
 	if (!window)
 	{
 		glfwTerminate();
@@ -164,8 +163,7 @@ public ref class X
 {
 public:
 	static MyForm^ myForm = gcnew MyForm();
-	float posX, posY, posZ;
-	bool animate;
+	int selectedAnimationIndex;
 	void EntryPoint()
 	{
 		Application::EnableVisualStyles();
@@ -174,22 +172,7 @@ public:
 
 	void Update()
 	{
-		this->posX = (myForm->posXTrackBar->Value - 100) / 10.0f;
-		myForm->lblAngleX->Text = "posX: " + this->posX;
-		
-		this->posY = (myForm->posYTrackBar->Value + 10) / 20.0f;
-		myForm->lblAngleY->Text = "posY: " + this->posY;
-		
-		this->posZ = (myForm->posZTrackBar->Value - 100) / 10.0f;
-		myForm->lblAngleZ->Text = "posZ: " + this->posZ;
-
-		this->animate = myForm->cbAnimate->Checked;
-		
-		/*this->refractiveIndex = myForm->refractiveTrackBar->Value / 10.0f;
-		this->mixRatio = myForm->ratioTrackBar->Value / 100.0f;
-		this->textureRatio = myForm->textureTrackBar->Value / 100.0f;
-		this->rotate = myForm->rotateCB->Checked;
-		this->normalMap = myForm->normalMapCB->Checked;*/
+		this->selectedAnimationIndex = myForm->animationDropDown->SelectedIndex;
 	}
 };
 
@@ -330,7 +313,6 @@ using namespace System::Threading;
 
 int main()
 {
-
 	X^ o1 = gcnew X();
 	Thread^ thread = gcnew Thread(gcnew ThreadStart(o1, &X::EntryPoint));
 	thread->Start();	
@@ -363,6 +345,20 @@ int main()
 	//dragonModel->Rotate(glm::vec3(1.0f, 0, 0));	// It's a bit too big for our scene, so scale it down
 	//dragonModel = new Model("../models/cube.dae");
 	//dragonModel = new Model("../models/monkey_MODEL.dae");
+	//dragonModel = new Model("../models/finger.dae");
+	//dragonModel->Rotate(glm::vec3(0, 0, M_PI/2));
+	//dragonModel->Translate(glm::vec3(5.0f, 0.0f, 0.0f));
+
+	bobModel = new Model("../models/bob.fbx");
+	bobModel->Translate(glm::vec3(-2.0f, 0.0f, 0.0f));
+	bobModel->Scale(glm::vec3(0.00025f, 0.00025f, 0.00025f));	// It's a bit too big for our scene, so scale it down
+
+
+	//dragonModel = new Model("../models/boblampclean.md5mesh");
+	//dragonModel = new Model("../models/marine_anims.dae");
+	dragonModel = new Model("../models/marine_anims.fbx");
+	dragonModel->Scale(glm::vec3(0.0001f, 0.0001f, 0.0001f));	// It's a bit too big for our scene, so scale it down
+	//dragonModel->Rotate(glm::vec3(0, glm::radians(180.0f), 0));
 
 	glm::vec3 cube1Position(5.0f, 0.5f, 0.0F);
 	cube1 = new Cube(&shadowShader, cube1Position);
@@ -404,8 +400,6 @@ int main()
     glReadBuffer(GL_NONE);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-
-
 	projectionMatrix = glm::perspective(
 		45.0f,
 		1.0f,
@@ -421,13 +415,6 @@ int main()
         deltaTime = currentFrame - lastFrame;
         lastFrame = currentFrame;
 
-		if (o1->animate) {
-			glm::vec3 cubePosition(Math::Sin(currentFrame/2) * 4, Math::Sin(currentFrame/3) * 4 + 5, Math::Sin(currentFrame/4) * 4);
-			cube1->setPosition(cubePosition);
-		} else {
-			cube1->setPosition(glm::vec3(o1->posX/1.0f, o1->posY/1.0f, o1->posZ/1.0f));
-		}
-
 		drawFirstNormalAndTarget();
 		drawSeconNormalAndTarget();
 		drawThirdNormalAndTarget();
@@ -437,6 +424,8 @@ int main()
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		do_movement();
 		viewMatrix = camera.GetViewMatrix();
+
+		//dragonModel->SetAnimationIndex(o1->selectedAnimationIndex);
 
 		// 1. Render depth of scene to texture (from light's perspective)
         // - Get light projection/view matrix.
@@ -453,8 +442,8 @@ int main()
 
         glViewport(0, 0, SHADOW_WIDTH, SHADOW_HEIGHT);
         glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
-            glClear(GL_DEPTH_BUFFER_BIT);
-            RenderScene(simpleDepthShader);
+        glClear(GL_DEPTH_BUFFER_BIT);
+        RenderScene(simpleDepthShader);
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 		//viewMatrix = lightSpaceMatrix;
@@ -485,6 +474,8 @@ int main()
 	return 0;
 }
 
+long long m_startTime = GetTickCount();
+
 void RenderScene(Shader shader)
 {
 	shader.enableShader();
@@ -494,15 +485,29 @@ void RenderScene(Shader shader)
 	shader.setUniformVector3f("viewPos", camera.Position);
 	shader.setUniform1f("shadows", 1);
 
-	//dragonModel->Draw(shader);
+
+	float RunningTime = (float)((double)GetTickCount() - (double)m_startTime) / 1000.0f;
+
+	vector<glm::mat4> Transforms;
+	bobModel->BoneTransform(RunningTime, Transforms);
+	bobModel->Draw(shader, Transforms);
+	//dragonModel->BoneTransform(Transforms);
+	dragonModel->BoneTransform(RunningTime, Transforms);
+	//dragonModel->BoneTransform(1, Transforms);
+
+	// Draw in wireframe mode
+	//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+	dragonModel->Draw(shader, Transforms);
+
+
+
 
 	//cube1->rotate(glm::vec3(0, 0.01, 0));
 	shader.setUniformMatrix4fv("model", cube1->_modelMatrix);
 	cube1->draw();
 
 	
-	// Draw in wireframe mode
-	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+
 	shader.setUniformMatrix4fv("model", cone1->_modelMatrix);
 	cone1->draw();
 
@@ -512,7 +517,7 @@ void RenderScene(Shader shader)
 	shader.setUniformMatrix4fv("model", cone3->_modelMatrix);
 	cone3->draw();
 	// Disable wireframe mode
-	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+	//glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
 
 	shader.setUniformMatrix4fv("model", plane1->_modelMatrix);
@@ -544,7 +549,10 @@ void DrawDragonModel()
 // Moves/alters the object positions based on user input
 void do_movement()
 {
-	    // Camera controls
+	// reset the animation if no keys are held
+	dragonModel->SetAnimationIndex(0);
+
+	// Camera controls
     if(keys[GLFW_KEY_W])
         camera.ProcessKeyboard(FORWARD, deltaTime);
     if(keys[GLFW_KEY_S])
@@ -560,32 +568,25 @@ void do_movement()
 
 
 	if (keys[GLFW_KEY_UP]) {
-		yRot--;
-		dragonModel->Rotate(glm::vec3(0.01f, 0.0f, 0.0f));
+		dragonModel->SetAnimationIndex(11);
 	}
 	if (keys[GLFW_KEY_DOWN]) {
-		yRot++;
 		dragonModel->Rotate(glm::vec3(-0.01f, 0.0f, 0.0f));
 	}
 	if (keys[GLFW_KEY_RIGHT]) {
-		xRot--;
 		dragonModel->Rotate(glm::vec3(0.0f, 0.01f, 0.0f));
 	}
 	if (keys[GLFW_KEY_LEFT]) {
-		xRot++;
 		dragonModel->Rotate(glm::vec3(0.0f, -0.01f, 0.0f));
 	}
 	if (keys[GLFW_KEY_Q]) {
-		zRot++;
 		dragonModel->Rotate(glm::vec3(0.0f, 0.0f, 0.01f));
 	}
 	if (keys[GLFW_KEY_E]) {
-		zRot--;
 		dragonModel->Rotate(glm::vec3(0.0f, 0.0f, -0.01f));
 	}
 
 	if (keys[GLFW_KEY_M]) {
-		zRot--;
 		dragonModel->Rotate(glm::vec3(0.0f, 0.0f, -0.01f));
 	}
 }
