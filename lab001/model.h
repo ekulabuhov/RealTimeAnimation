@@ -65,6 +65,8 @@ public:
 	void Scale(glm::vec3 scale)
     {
 		this->_modelMatrix = glm::scale(this->_modelMatrix, scale);
+		// EK: for now I'm assuming that the model is scaled evenly in all dimensions
+		this->_scaler = scale.x;
     }
 
 	void Translate(glm::vec3 translate)
@@ -72,23 +74,50 @@ public:
 		this->_modelMatrix = glm::translate(this->_modelMatrix, translate);
     }
 
+	// There's an x, y, z and positional vectors in modelMatrix:
+	// xx  yx  zx  px
+	// xy  yy  zy  py
+	// xz  yz  zz  pz
+	// xw  yw  zw  pw
+	// You can see it by looking at identity matrix:
+	// 1   0   0   0
+	// 0   1   0   0
+	// 0   0   1   0
+	// 0   0   0   1
+	glm::vec3 GetPosition()
+	{
+		auto positionVector = this->_modelMatrix[3];
+		return glm::vec3(positionVector.x, positionVector.y, positionVector.z);
+	}
+
+	glm::vec3 GetForwardVector() 
+	{
+		auto zVector = this->_modelMatrix[2];
+		return glm::vec3(zVector.x, zVector.y, zVector.z) / this->_scaler;
+	}
+
+	glm::vec3 GetUpVector()
+	{
+		auto upMatrix = this->_modelMatrix[1];
+		return glm::vec3(upMatrix.x, upMatrix.y, upMatrix.z) / this->_scaler;
+	}
+
+	float GetYRotation() {
+		glm::vec3 zVector(0.0f, 0.0f, 1.0f);
+		float crossProduct = glm::cross(GetForwardVector(), zVector).y;
+		float playerRotation = acos(glm::dot(GetForwardVector(), zVector)) * 180 / M_PI;
+		if (crossProduct < 0)
+			playerRotation = 360 - playerRotation;
+
+		return playerRotation;
+	}
+
 	void SetModelMatrix(glm::mat4 m) {
 		this->_modelMatrix = m;
 	}
 
 	void SetAnimationIndex(int index) {
 		this->_animationIndex = index;
-	}
-
-	void BoneTransform(vector<glm::mat4>& Transforms) {
-		glm::mat4 Identity(1.0f);
-		ReadNodeHeirarchy(scene->mRootNode, Identity);
-
-		Transforms.resize(m_NumBones);
-
-		for (GLuint i = 0 ; i < m_NumBones ; i++) {
-			Transforms[i] = m_BoneInfo[i].FinalTransformation;
-		}
 	}
 
 	void BoneTransform(float TimeInSeconds, vector<glm::mat4>& Transforms) {
@@ -122,6 +151,7 @@ private:
 	const aiScene* scene;
 	Assimp::Importer importer;
 	int _animationIndex;
+	float _scaler;
 
     /*  Functions   */
     // Loads a model with supported ASSIMP extensions from file and stores the resulting meshes in the meshes vector.
@@ -164,36 +194,6 @@ private:
         }
 
     }
-
-	// Recursive function
-	void ReadNodeHeirarchy(const aiNode* pNode, const glm::mat4& ParentTransform) {
-		string NodeName(pNode->mName.data);
-
-		glm::mat4 NodeTransformation;
-		_aiMatrixToGlm(pNode->mTransformation, NodeTransformation);
-
-		glm::mat4 TranslationM;
-		glm::mat4 RotationM;
-		glm::mat4 ScallingM;
-
-		if (NodeName == "Bone.003") {
-			glm::vec3 EulerAngles(0, 0, glm::radians(90.0f));
-			glm::quat MyQuaternion(EulerAngles);
-			RotationM *= glm::mat4_cast(MyQuaternion);
-		}
-		NodeTransformation *= TranslationM * RotationM * ScallingM;
-
-		glm::mat4 GlobalTransformation = ParentTransform * NodeTransformation;
-
-		if (m_BoneMapping.find(NodeName) != m_BoneMapping.end()) {
-			GLuint BoneIndex = m_BoneMapping[NodeName];
-			m_BoneInfo[BoneIndex].FinalTransformation = m_GlobalInverseTransform * GlobalTransformation * m_BoneInfo[BoneIndex].BoneOffset;
-		}
-
-		for (GLuint i = 0; i < pNode->mNumChildren; i++) {
-			ReadNodeHeirarchy(pNode->mChildren[i], GlobalTransformation);
-		}
-	}
 
 	const aiNodeAnim* FindNodeAnim(const aiAnimation* pAnimation, const string NodeName)
 	{

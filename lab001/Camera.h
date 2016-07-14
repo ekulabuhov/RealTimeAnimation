@@ -2,6 +2,7 @@
 
 // Std. Includes
 #include <vector>
+#include <math.h>
 
 // GL Includes
 #include <GL/glew.h>
@@ -27,6 +28,8 @@ const GLfloat SPEED      =  3.0f;
 const GLfloat SENSITIVTY =  0.25f;
 const GLfloat ZOOM       =  45.0f;
 
+float distanceFromPlayer = 5.0f;
+float lift = 2.0f;
 
 // An abstract camera class that processes input and calculates the corresponding Eular Angles, Vectors and Matrices for use in OpenGL
 class Camera
@@ -66,9 +69,16 @@ public:
     }
 
     // Returns the view matrix calculated using Eular Angles and the LookAt Matrix
-    glm::mat4 GetViewMatrix()
+    glm::mat4 GetViewMatrix(float playerRotation, glm::vec3 playerPosition)
     {
-        return glm::lookAt(this->Position, this->Position + this->Front, this->Up);
+		// Get the camera behind the character and lift it up a little
+		float theta = -playerRotation;
+		float offsetX = this->calculateHorizontalDistance() * sin(theta * M_PI / 180);
+		float offsetZ = this->calculateHorizontalDistance() * cos(theta * M_PI / 180);
+		this->Position.x = playerPosition.x - offsetX;
+		this->Position.z = playerPosition.z - offsetZ;
+		this->Position.y = 2.5f + this->calculateVerticalDistance(); // vertical distance
+        return glm::lookAt(this->Position, playerPosition + glm::vec3(0.0f, lift, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
     }
 
     // Processes input received from any keyboard-like input system. Accepts input parameter in the form of camera defined ENUM (to abstract it from windowing systems)
@@ -101,10 +111,10 @@ public:
         // Make sure that when pitch is out of bounds, screen doesn't get flipped
         if (constrainPitch)
         {
-            if (this->Pitch > 89.0f)
-                this->Pitch = 89.0f;
-            if (this->Pitch < -89.0f)
-                this->Pitch = -89.0f;
+            if (this->Pitch > 14.0f)
+                this->Pitch = 14.0f;
+            if (this->Pitch < -14.0f)
+                this->Pitch = -14.0f;
         }
 
         // Update Front, Right and Up Vectors using the updated Eular angles
@@ -136,4 +146,14 @@ private:
         this->Right = glm::normalize(glm::cross(this->Front, this->WorldUp));  // Normalize the vectors, because their length gets closer to 0 the more you look up or down which results in slower movement.
         this->Up    = glm::normalize(glm::cross(this->Right, this->Front));
     }
+
+	float calculateHorizontalDistance() 
+	{
+		return distanceFromPlayer * cos(this->Pitch * M_PI / 180);
+	}
+
+	float calculateVerticalDistance() 
+	{
+		return distanceFromPlayer * sin(this->Pitch * M_PI / 180);
+	}
 };

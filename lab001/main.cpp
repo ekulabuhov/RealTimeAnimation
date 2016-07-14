@@ -35,7 +35,7 @@ Cube *cube1, *lamp;
 Plane* plane1;
 Cone *cone1, *cone2, *cone3;
 CubeMap* cubeMap;
-Model *dragonModel, *bobModel;
+Model *mainModel, *bobModel;
 bool keys[1024];
 GLfloat fov = 45.0f;
 glm::mat4 projectionMatrix;
@@ -55,6 +55,9 @@ Shader shadowShader;
 glm::vec3 lightPos(-2.0f, 4.0f, -1.0f);
 glm::vec3 lightColor(1.0f, 1.0f, 1.0f);
 glm::vec3 cube1Color(1.0f, 0.5f, 0.31f);
+float runningSpeed = 2500.0f;
+float turningSpeed = 0.1f;
+float mouseSensitivity = -0.002f;
 
 bool initWindow()
 {
@@ -140,6 +143,8 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos)
 	float deltaY = lastMouseY - ypos;
 	lastMouseX = xpos;
 	lastMouseY = ypos;
+
+	mainModel->Rotate(glm::vec3(0.0f, deltaX * mouseSensitivity, 0.0f));
 
 	camera.ProcessMouseMovement(deltaX, deltaY);
 }
@@ -337,28 +342,28 @@ int main()
 	glUniform1i(glGetUniformLocation(shadowShader._shaderProgramID, "diffuseTexture"), 0);
     glUniform1i(glGetUniformLocation(shadowShader._shaderProgramID, "shadowMap"), 1);
 
-	//Model dragonModel("../models/nanosuit/nanosuit.obj");
-	//dragonModel.Translate(glm::vec3(0.0f, -1.7f, 0.0f)); // Translate it down a bit so it's at the center of the scene)
-	//dragonModel.Scale(glm::vec3(0.2f, 0.2f, 0.2f));	// It's a bit too big for our scene, so scale it down
-	//dragonModel = new Model("../models/Bonanza.dae");
-	//dragonModel->Scale(glm::vec3(0.2f, 0.2f, 0.2f));	// It's a bit too big for our scene, so scale it down
-	//dragonModel->Rotate(glm::vec3(1.0f, 0, 0));	// It's a bit too big for our scene, so scale it down
-	//dragonModel = new Model("../models/cube.dae");
-	//dragonModel = new Model("../models/monkey_MODEL.dae");
-	//dragonModel = new Model("../models/finger.dae");
-	//dragonModel->Rotate(glm::vec3(0, 0, M_PI/2));
-	//dragonModel->Translate(glm::vec3(5.0f, 0.0f, 0.0f));
+	//Model mainModel("../models/nanosuit/nanosuit.obj");
+	//mainModel.Translate(glm::vec3(0.0f, -1.7f, 0.0f)); // Translate it down a bit so it's at the center of the scene)
+	//mainModel.Scale(glm::vec3(0.2f, 0.2f, 0.2f));	// It's a bit too big for our scene, so scale it down
+	//mainModel = new Model("../models/Bonanza.dae");
+	//mainModel->Scale(glm::vec3(0.2f, 0.2f, 0.2f));	// It's a bit too big for our scene, so scale it down
+	//mainModel->Rotate(glm::vec3(1.0f, 0, 0));	// It's a bit too big for our scene, so scale it down
+	//mainModel = new Model("../models/cube.dae");
+	//mainModel = new Model("../models/monkey_MODEL.dae");
+	//mainModel = new Model("../models/finger.dae");
+	//mainModel->Rotate(glm::vec3(0, 0, M_PI/2));
+	//mainModel->Translate(glm::vec3(5.0f, 0.0f, 0.0f));
 
 	bobModel = new Model("../models/bob.fbx");
 	bobModel->Translate(glm::vec3(-2.0f, 0.0f, 0.0f));
 	bobModel->Scale(glm::vec3(0.00025f, 0.00025f, 0.00025f));	// It's a bit too big for our scene, so scale it down
 
 
-	//dragonModel = new Model("../models/boblampclean.md5mesh");
-	//dragonModel = new Model("../models/marine_anims.dae");
-	dragonModel = new Model("../models/marine_anims.fbx");
-	dragonModel->Scale(glm::vec3(0.0001f, 0.0001f, 0.0001f));	// It's a bit too big for our scene, so scale it down
-	//dragonModel->Rotate(glm::vec3(0, glm::radians(180.0f), 0));
+	//mainModel = new Model("../models/boblampclean.md5mesh");
+	//mainModel = new Model("../models/marine_anims.dae");
+	mainModel = new Model("../models/marine_anims.fbx");
+	mainModel->Scale(glm::vec3(0.0001f, 0.0001f, 0.0001f));	// It's a bit too big for our scene, so scale it down
+	//mainModel->Rotate(glm::vec3(0, glm::radians(180.0f), 0));
 
 	glm::vec3 cube1Position(5.0f, 0.5f, 0.0F);
 	cube1 = new Cube(&shadowShader, cube1Position);
@@ -423,9 +428,9 @@ int main()
 		//glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		do_movement();
-		viewMatrix = camera.GetViewMatrix();
+		viewMatrix = camera.GetViewMatrix(mainModel->GetYRotation(), mainModel->GetPosition());
 
-		//dragonModel->SetAnimationIndex(o1->selectedAnimationIndex);
+		//mainModel->SetAnimationIndex(o1->selectedAnimationIndex);
 
 		// 1. Render depth of scene to texture (from light's perspective)
         // - Get light projection/view matrix.
@@ -491,22 +496,15 @@ void RenderScene(Shader shader)
 	vector<glm::mat4> Transforms;
 	bobModel->BoneTransform(RunningTime, Transforms);
 	bobModel->Draw(shader, Transforms);
-	//dragonModel->BoneTransform(Transforms);
-	dragonModel->BoneTransform(RunningTime, Transforms);
-	//dragonModel->BoneTransform(1, Transforms);
+	mainModel->BoneTransform(RunningTime, Transforms);
 
 	// Draw in wireframe mode
 	//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-	dragonModel->Draw(shader, Transforms);
-
-
-
+	mainModel->Draw(shader, Transforms);
 
 	//cube1->rotate(glm::vec3(0, 0.01, 0));
 	shader.setUniformMatrix4fv("model", cube1->_modelMatrix);
-	cube1->draw();
-
-	
+	cube1->draw();	
 
 	shader.setUniformMatrix4fv("model", cone1->_modelMatrix);
 	cone1->draw();
@@ -519,74 +517,29 @@ void RenderScene(Shader shader)
 	// Disable wireframe mode
 	//glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
-
 	shader.setUniformMatrix4fv("model", plane1->_modelMatrix);
 	plane1->draw();
 	shader.setUniformMatrix4fv("model", lamp->_modelMatrix);
 	lamp->draw();
 }
 
-void DrawDragonModel()
-{
-	//reflectAndRefractShader.enableShader();
-	//reflectAndRefractShader.setUniformMatrix4fv("projection", projectionMatrix);
-	//reflectAndRefractShader.setUniformMatrix4fv("view", viewMatrix);
-	//reflectAndRefractShader.setUniformVector3f("cameraPos", camera.Position);
-	//reflectAndRefractShader.setUniform1f("refractiveIndex", o1->refractiveIndex);
-	//reflectAndRefractShader.setUniform1f("mixRatio", o1->mixRatio);
-	//reflectAndRefractShader.setUniform1f("textureRatio", o1->textureRatio);
-	//reflectAndRefractShader.setUniform1f("normalMap", o1->normalMap);
-
-	//glActiveTexture(GL_TEXTURE3);
-	//glUniform1i(glGetUniformLocation(reflectAndRefractShader._shaderProgramID, "skybox"), 3);
-	//glBindTexture(GL_TEXTURE_CUBE_MAP, cubeMap.texID);  
-	//if (o1->rotate) {
-	//	dragonModel.Rotate(glm::vec3(0.00f, 0.01f, 0.00f));
-	//}
-	//dragonModel.Draw(reflectAndRefractShader);
-}
-
 // Moves/alters the object positions based on user input
 void do_movement()
 {
 	// reset the animation if no keys are held
-	dragonModel->SetAnimationIndex(0);
+	mainModel->SetAnimationIndex(0);
 
-	// Camera controls
-    if(keys[GLFW_KEY_W])
-        camera.ProcessKeyboard(FORWARD, deltaTime);
-    if(keys[GLFW_KEY_S])
-        camera.ProcessKeyboard(BACKWARD, deltaTime);
-    if(keys[GLFW_KEY_A])
-        camera.ProcessKeyboard(LEFT, deltaTime);
-    if(keys[GLFW_KEY_D])
-        camera.ProcessKeyboard(RIGHT, deltaTime);
-	if(keys[GLFW_KEY_SPACE])
-        camera.ProcessKeyboard(UP, deltaTime);
-	if(keys[GLFW_KEY_LEFT_SHIFT])
-        camera.ProcessKeyboard(DOWN, deltaTime);
-
-
-	if (keys[GLFW_KEY_UP]) {
-		dragonModel->SetAnimationIndex(11);
+	if (keys[GLFW_KEY_W]) {
+		mainModel->SetAnimationIndex(11);
+		mainModel->Translate(glm::vec3(0.0f, 0.0f, runningSpeed));
 	}
 	if (keys[GLFW_KEY_DOWN]) {
-		dragonModel->Rotate(glm::vec3(-0.01f, 0.0f, 0.0f));
+		
 	}
-	if (keys[GLFW_KEY_RIGHT]) {
-		dragonModel->Rotate(glm::vec3(0.0f, 0.01f, 0.0f));
+	if (keys[GLFW_KEY_A]) {
+		mainModel->Translate(glm::vec3(runningSpeed / 2, 0.0f, 0.0f));
 	}
-	if (keys[GLFW_KEY_LEFT]) {
-		dragonModel->Rotate(glm::vec3(0.0f, -0.01f, 0.0f));
-	}
-	if (keys[GLFW_KEY_Q]) {
-		dragonModel->Rotate(glm::vec3(0.0f, 0.0f, 0.01f));
-	}
-	if (keys[GLFW_KEY_E]) {
-		dragonModel->Rotate(glm::vec3(0.0f, 0.0f, -0.01f));
-	}
-
-	if (keys[GLFW_KEY_M]) {
-		dragonModel->Rotate(glm::vec3(0.0f, 0.0f, -0.01f));
+	if (keys[GLFW_KEY_D]) {
+		mainModel->Translate(glm::vec3(-runningSpeed / 2, 0.0f, 0.0f));
 	}
 }
