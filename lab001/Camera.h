@@ -48,6 +48,7 @@ public:
     GLfloat MovementSpeed;
     GLfloat MouseSensitivity;
     GLfloat Zoom;
+	bool IsThirdPersonCamera;
 
     // Constructor with vectors
     Camera(glm::vec3 position = glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f), GLfloat yaw = YAW, GLfloat pitch = PITCH) : Front(glm::vec3(0.0f, 0.0f, -1.0f)), MovementSpeed(SPEED), MouseSensitivity(SENSITIVTY), Zoom(ZOOM)
@@ -71,14 +72,19 @@ public:
     // Returns the view matrix calculated using Eular Angles and the LookAt Matrix
     glm::mat4 GetViewMatrix(float playerRotation, glm::vec3 playerPosition)
     {
-		// Get the camera behind the character and lift it up a little
-		float theta = -playerRotation;
-		float offsetX = this->calculateHorizontalDistance() * sin(theta * M_PI / 180);
-		float offsetZ = this->calculateHorizontalDistance() * cos(theta * M_PI / 180);
-		this->Position.x = playerPosition.x - offsetX;
-		this->Position.z = playerPosition.z - offsetZ;
-		this->Position.y = 2.5f + this->calculateVerticalDistance(); // vertical distance
-        return glm::lookAt(this->Position, playerPosition + glm::vec3(0.0f, lift, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+		if (this->IsThirdPersonCamera) {
+			// Get the camera behind the character and lift it up a little
+			float theta = -playerRotation;
+			float offsetX = this->calculateHorizontalDistance() * sin(theta * M_PI / 180);
+			float offsetZ = this->calculateHorizontalDistance() * cos(theta * M_PI / 180);
+			this->Position.x = playerPosition.x - offsetX;
+			this->Position.z = playerPosition.z - offsetZ;
+			this->Position.y = 2.5f + this->calculateVerticalDistance(); // vertical distance
+			return glm::lookAt(this->Position, playerPosition + glm::vec3(0.0f, lift, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+		} else {
+			// Free flying camera
+			return glm::lookAt(this->Position, this->Position + this->Front, this->Up);
+		}
     }
 
     // Processes input received from any keyboard-like input system. Accepts input parameter in the form of camera defined ENUM (to abstract it from windowing systems)
@@ -102,6 +108,11 @@ public:
     // Processes input received from a mouse input system. Expects the offset value in both the x and y direction.
     void ProcessMouseMovement(GLfloat xoffset, GLfloat yoffset, GLboolean constrainPitch = true)
     {
+		GLfloat pitchLimit = 89.0f;
+		if (this->IsThirdPersonCamera) {
+			pitchLimit = 14.0f;	
+		}
+
         xoffset *= this->MouseSensitivity;
         yoffset *= this->MouseSensitivity;
 
@@ -111,10 +122,10 @@ public:
         // Make sure that when pitch is out of bounds, screen doesn't get flipped
         if (constrainPitch)
         {
-            if (this->Pitch > 14.0f)
-                this->Pitch = 14.0f;
-            if (this->Pitch < -14.0f)
-                this->Pitch = -14.0f;
+            if (this->Pitch > pitchLimit)
+                this->Pitch = pitchLimit;
+            if (this->Pitch < -pitchLimit)
+                this->Pitch = -pitchLimit;
         }
 
         // Update Front, Right and Up Vectors using the updated Eular angles

@@ -42,6 +42,7 @@ glm::mat4 projectionMatrix;
 glm::mat4 viewMatrix;
 double lastMouseX, lastMouseY = 0;
 bool firstMouse = true;
+map<string,glm::quat> KinematicTransforms;	// maps a bone name to its transform
 
 GLfloat deltaTime = 0.0f;
 GLfloat lastFrame = 0.0f;
@@ -58,6 +59,7 @@ glm::vec3 cube1Color(1.0f, 0.5f, 0.31f);
 float runningSpeed = 2500.0f;
 float turningSpeed = 0.1f;
 float mouseSensitivity = -0.002f;
+bool isThirdPersonCamera = false;
 
 bool initWindow()
 {
@@ -144,7 +146,9 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos)
 	lastMouseX = xpos;
 	lastMouseY = ypos;
 
-	mainModel->Rotate(glm::vec3(0.0f, deltaX * mouseSensitivity, 0.0f));
+	if (isThirdPersonCamera) {
+		mainModel->Rotate(glm::vec3(0.0f, deltaX * mouseSensitivity, 0.0f));
+	}
 
 	camera.ProcessMouseMovement(deltaX, deltaY);
 }
@@ -169,6 +173,8 @@ public ref class X
 public:
 	static MyForm^ myForm = gcnew MyForm();
 	int selectedAnimationIndex;
+	bool thirdPersonCamera;
+	float cubeX, cubeY, cubeZ;
 	void EntryPoint()
 	{
 		Application::EnableVisualStyles();
@@ -178,6 +184,11 @@ public:
 	void Update()
 	{
 		this->selectedAnimationIndex = myForm->animationDropDown->SelectedIndex;
+		this->thirdPersonCamera = myForm->cbThirdPersonCamera->Checked;
+
+		this->cubeX = myForm->tbCubeX->Value / 10.0f;
+		this->cubeY = myForm->tbCubeY->Value / 10.0f;
+		this->cubeZ = myForm->tbCubeZ->Value / 10.0f;
 	}
 };
 
@@ -286,11 +297,83 @@ glm::vec3 calculateConeNormal() {
 	return glm::normalize(cone1->getUpVector());
 }
 
+using namespace System::Threading;
+
+
+// returns EulerAngles
+glm::quat handleRotation(glm::vec3 startVector, glm::vec3 endVector) {
+	glm::quat rotateQuaternion = RotationBetweenVectors(startVector, endVector);
+	//glm::quat rotateQuaternion = rotateMatrix(startVector, endVector);
+	//glm::quat rotateQuaternion = RotationBetweenVectorsThreeJs(startVector, endVector); 
+	
+	return rotateQuaternion;
+}
+
+// handVertex is retrievable from Blender bones head and tail position divided by 100
+glm::vec3 boneLocalToGlobal(glm::vec3 handVertex, std::string boneName) {
+	int boneIndex = mainModel->m_BoneMapping[boneName];
+	glm::vec4 PosL = mainModel->m_BoneInfo[boneIndex].FinalTransformation * glm::vec4(handVertex, 1);
+	glm::vec4 PosL2 = mainModel->_modelMatrix * PosL;
+
+	return glm::vec3(PosL2);
+}
+
+glm::vec3 calculateHandNormal() {
+	glm::vec3 handHead = glm::vec3(-0.67416, -0.05412, 1.55149);
+	glm::vec3 handTail = glm::vec3(-0.75961, -0.07666, 1.54633);
+	auto handHeadG = boneLocalToGlobal(handHead, "Fbx01_R_Hand");
+	auto handTailG = boneLocalToGlobal(handTail, "Fbx01_R_Hand");
+	
+	return glm::normalize(handTailG - handHeadG);
+}
+
+glm::vec3 calculateHandTip() {
+	glm::vec3 handTail = glm::vec3(-0.75961, -0.07666, 1.54633);
+	auto handTailG = boneLocalToGlobal(handTail, "Fbx01_R_Hand");
+	
+	return handTailG;
+}
+
+glm::vec3 calculateHandPosition() {
+	glm::vec3 handHead = glm::vec3(-0.67416, -0.05412, 1.55149);
+	auto handPosition = boneLocalToGlobal(handHead, "Fbx01_R_Hand");
+	return handPosition;
+}
+
+glm::quat calculateHandRotation() {
+	int boneIndex = mainModel->m_BoneMapping["Fbx01_R_Hand"];
+	glm::quat currentQuaternion(mainModel->m_BoneInfo[boneIndex].GlobalTransformation);
+	return glm::normalize(currentQuaternion);
+}
+
 void drawFirstNormalAndTarget() {
 	glm::vec3 startVector = calculateConeNormal();
 	glm::vec3 endVector = glm::normalize(cube1->getPosition() - cone1->getPosition());
 
 	handleRotation(startVector, endVector, cone1);
+
+	// hand rotation
+	startVector = calculateHandNormal();
+	endVector = glm::normalize(cube1->getPosition() - calculateHandPosition());
+	glm::quat rotation = calculateHandRotation();
+	glm::quat currentRotation = KinematicTransforms["Fbx01_R_Hand"];
+	glm::quat rotationChange = handleRotation(startVector, endVector);
+
+	//currentRotation *= rotationChange;
+	//currentRotation = glm::normalize(currentRotation);
+	//KinematicTransforms["Fbx01_R_Hand"] = currentRotation;
+	KinematicTransforms["Fbx01_R_Hand"] = currentRotation * rotationChange;
+
+	// hand debug helper arrows
+	// glm::vec3 handPosition = calculateHandPosition();
+	// firstHandNormal->set(handPosition, handPosition + startVector);
+	// firstHandTarget->set(handPosition, handPosition + endVector);
+}
+
+glm::vec3 calculateForearmPosition() {
+	glm::vec3 forearmHead = glm::vec3(-0.41828, -0.00961, 1.55952);
+	auto forearmPosition = boneLocalToGlobal(forearmHead, "Fbx01_R_Forearm");
+	return forearmPosition;
 }
 
 void drawSeconNormalAndTarget() {
@@ -301,6 +384,26 @@ void drawSeconNormalAndTarget() {
 	handleRotation(effectorVector, endVector, cone2);
 
 	cone1->setPosition(cone2->localToWorld(glm::vec3(0, 1, 0)));
+
+	// forearm rotation
+	glm::vec3 forearmPosition = calculateForearmPosition();
+	endVector = glm::normalize(cube1->getPosition() - forearmPosition);
+	firstLinkTip = calculateHandTip();
+	effectorVector = glm::normalize(firstLinkTip - forearmPosition);
+
+	glm::quat currentRotation = KinematicTransforms["Fbx01_R_Forearm"];
+	glm::quat rotationChange = handleRotation(effectorVector, endVector);
+	KinematicTransforms["Fbx01_R_Forearm"] = glm::slerp(currentRotation, currentRotation * rotationChange, 0.5f);
+
+	// forearm debug helper arrows
+	// forearmNormal->set(forearmPosition, forearmPosition + effectorVector);
+	// forearmTarget->set(forearmPosition, forearmPosition + endVector);
+}
+
+glm::vec3 calculateUpperArmPosition() {
+	glm::vec3 upperArmHead = glm::vec3(-0.19121, -0.03099, 1.57615);
+	auto upperArmPosition = boneLocalToGlobal(upperArmHead, "Fbx01_R_UpperArm");
+	return upperArmPosition;
 }
 
 void drawThirdNormalAndTarget() {
@@ -312,9 +415,22 @@ void drawThirdNormalAndTarget() {
 
 	cone2->setPosition(cone3->localToWorld(glm::vec3(0, 1, 0)));
 	cone1->setPosition(cone2->localToWorld(glm::vec3(0, 1, 0)));
+
+	// Upper Arm rotation
+	glm::vec3 upperArmPosition = calculateUpperArmPosition();
+	endVector = glm::normalize(cube1->getPosition() - upperArmPosition);
+	firstLinkTip = calculateHandTip();
+	effectorVector = glm::normalize(firstLinkTip - upperArmPosition);
+
+	glm::quat currentRotation = KinematicTransforms["Fbx01_R_UpperArm"];
+	glm::quat rotationChange = handleRotation(effectorVector, endVector);
+	KinematicTransforms["Fbx01_R_UpperArm"] = glm::slerp(currentRotation, currentRotation * rotationChange, 0.5f);
+
+	// Upper Arm debug helper arrows
+	// upperArmNormal->set(upperArmPosition, upperArmPosition + effectorVector);
+	// upperArmTarget->set(upperArmPosition, upperArmPosition + endVector);
 }
 
-using namespace System::Threading;
 
 int main()
 {
@@ -361,9 +477,15 @@ int main()
 
 	//mainModel = new Model("../models/boblampclean.md5mesh");
 	//mainModel = new Model("../models/marine_anims.dae");
-	mainModel = new Model("../models/marine_anims.fbx");
-	mainModel->Scale(glm::vec3(0.0001f, 0.0001f, 0.0001f));	// It's a bit too big for our scene, so scale it down
-	//mainModel->Rotate(glm::vec3(0, glm::radians(180.0f), 0));
+	//mainModel = new Model("../models/marine_anims.fbx");
+	//mainModel->Scale(glm::vec3(0.0001f, 0.0001f, 0.0001f));	// It's a bit too big for our scene, so scale it down
+
+	mainModel = new Model("../models/swat_anims.fbx");
+	//mainModel->Scale(glm::vec3(0.0001f, 0.0001f, 0.0001f));	// It's a bit too big for our scene, so scale it down
+
+	KinematicTransforms["Fbx01_R_UpperArm"] = glm::quat();
+	KinematicTransforms["Fbx01_R_Forearm"] = glm::quat();
+	KinematicTransforms["Fbx01_R_Hand"] = glm::quat();
 
 	glm::vec3 cube1Position(5.0f, 0.5f, 0.0F);
 	cube1 = new Cube(&shadowShader, cube1Position);
@@ -411,6 +533,8 @@ int main()
 		0.1f,
 		1000.0f
 	);
+
+	bool b1 = true, b2 = true, b3 = true;
   
 	glEnable(GL_DEPTH_TEST);
 	while (!glfwWindowShouldClose(window))
@@ -420,14 +544,20 @@ int main()
         deltaTime = currentFrame - lastFrame;
         lastFrame = currentFrame;
 
-		drawFirstNormalAndTarget();
-		drawSeconNormalAndTarget();
-		drawThirdNormalAndTarget();
+		if (b1) 
+			drawFirstNormalAndTarget();
+		if (b2)
+			drawSeconNormalAndTarget();
+		if (b3)
+			drawThirdNormalAndTarget();
+
+		cube1->setPosition(glm::vec3(o1->cubeX/1.0f, o1->cubeY/1.0f, o1->cubeZ/1.0f));
 
 		/* Rendering Code */
 		//glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		do_movement();
+		camera.IsThirdPersonCamera = isThirdPersonCamera;
 		viewMatrix = camera.GetViewMatrix(mainModel->GetYRotation(), mainModel->GetPosition());
 
 		//mainModel->SetAnimationIndex(o1->selectedAnimationIndex);
@@ -472,6 +602,7 @@ int main()
 		glfwSwapBuffers(window);
 		glfwPollEvents();
 		o1->myForm->Invoke(gcnew Action(o1, &X::Update) /*, xRotAngle, yRotAngle, zRotAngle*/);
+		isThirdPersonCamera = o1->thirdPersonCamera;
 	}
 
 	glfwTerminate();
@@ -494,9 +625,9 @@ void RenderScene(Shader shader)
 	float RunningTime = (float)((double)GetTickCount() - (double)m_startTime) / 1000.0f;
 
 	vector<glm::mat4> Transforms;
-	bobModel->BoneTransform(RunningTime, Transforms);
+	bobModel->BoneTransform(RunningTime, Transforms, KinematicTransforms);
 	bobModel->Draw(shader, Transforms);
-	mainModel->BoneTransform(RunningTime, Transforms);
+	mainModel->BoneTransform(RunningTime, Transforms, KinematicTransforms);
 
 	// Draw in wireframe mode
 	//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
@@ -526,6 +657,20 @@ void RenderScene(Shader shader)
 // Moves/alters the object positions based on user input
 void do_movement()
 {
+	// Camera controls
+    if(keys[GLFW_KEY_UP])
+        camera.ProcessKeyboard(FORWARD, deltaTime);
+    if(keys[GLFW_KEY_DOWN])
+        camera.ProcessKeyboard(BACKWARD, deltaTime);
+    if(keys[GLFW_KEY_LEFT])
+        camera.ProcessKeyboard(LEFT, deltaTime);
+    if(keys[GLFW_KEY_RIGHT])
+        camera.ProcessKeyboard(RIGHT, deltaTime);
+	if(keys[GLFW_KEY_SPACE])
+        camera.ProcessKeyboard(UP, deltaTime);
+	if(keys[GLFW_KEY_LEFT_SHIFT])
+        camera.ProcessKeyboard(DOWN, deltaTime);
+
 	// reset the animation if no keys are held
 	mainModel->SetAnimationIndex(0);
 
@@ -533,8 +678,9 @@ void do_movement()
 		mainModel->SetAnimationIndex(11);
 		mainModel->Translate(glm::vec3(0.0f, 0.0f, runningSpeed));
 	}
-	if (keys[GLFW_KEY_DOWN]) {
-		
+	if (keys[GLFW_KEY_S]) {
+		mainModel->SetAnimationIndex(11);
+		mainModel->Translate(glm::vec3(0.0f, 0.0f, -runningSpeed));
 	}
 	if (keys[GLFW_KEY_A]) {
 		mainModel->Translate(glm::vec3(runningSpeed / 2, 0.0f, 0.0f));

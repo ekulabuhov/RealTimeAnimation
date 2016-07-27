@@ -120,14 +120,14 @@ public:
 		this->_animationIndex = index;
 	}
 
-	void BoneTransform(float TimeInSeconds, vector<glm::mat4>& Transforms) {
+	void BoneTransform(float TimeInSeconds, vector<glm::mat4>& Transforms, map<string,glm::quat> KinematicTransforms) {
 		glm::mat4 Identity(1.0f);
 
 		float TicksPerSecond = scene->mAnimations[_animationIndex]->mTicksPerSecond != 0 ? scene->mAnimations[_animationIndex]->mTicksPerSecond : 25.0f;
 		float TimeInTicks = TimeInSeconds * TicksPerSecond;
 		float AnimationTime = fmod(TimeInTicks, scene->mAnimations[_animationIndex]->mDuration);
 
-		ReadNodeHeirarchy(AnimationTime, scene->mRootNode, Identity, _animationIndex);
+		ReadNodeHeirarchy(AnimationTime, scene->mRootNode, Identity, _animationIndex, KinematicTransforms);
 
 		Transforms.resize(m_NumBones);
 
@@ -135,17 +135,18 @@ public:
 			Transforms[i] = m_BoneInfo[i].FinalTransformation;
 		}
 	}
+
+	map<string,GLuint> m_BoneMapping;	// maps a bone name to its index
+	vector<BoneInfo> m_BoneInfo;		// contains final offset and transformations of the bone
+	glm::mat4 _modelMatrix;
     
 private:
     /*  Model Data  */
     vector<Mesh> meshes;
     string directory;
     vector<Texture> textures_loaded;	// Stores all the textures loaded so far, optimization to make sure textures aren't loaded more than once.
-	glm::mat4 _modelMatrix;
 
-	map<string,GLuint> m_BoneMapping; // maps a bone name to its index
 	GLuint m_NumBones;
-	vector<BoneInfo> m_BoneInfo;
 	glm::mat4 m_GlobalInverseTransform;
 
 	const aiScene* scene;
@@ -310,7 +311,7 @@ private:
 	}
 
 	// Recursive function
-	void ReadNodeHeirarchy(float AnimationTime, const aiNode* pNode, const glm::mat4& ParentTransform, int animationIndex) {
+	void ReadNodeHeirarchy(float AnimationTime, const aiNode* pNode, const glm::mat4& ParentTransform, int animationIndex, map<string,glm::quat> KinematicTransforms) {
 		string NodeName(pNode->mName.data);
 
 		const aiAnimation* pAnimation = scene->mAnimations[animationIndex];
@@ -343,6 +344,14 @@ private:
 			CalcInterpolatedPosition(Translation, AnimationTime, pNodeAnim);
 			glm::mat4 TranslationM = glm::translate(glm::vec3(Translation.x, Translation.y, Translation.z));
 
+			// EK: IK can override animations
+			if (KinematicTransforms.find(NodeName) != KinematicTransforms.end()) {
+				//glm::vec3 EulerAngles = KinematicTransforms[NodeName];
+				//glm::quat MyQuaternion(EulerAngles);
+				glm::quat MyQuaternion = KinematicTransforms[NodeName];
+				RotationM = glm::mat4_cast(MyQuaternion);
+			}
+
 			NodeTransformation = TranslationM * RotationM * ScallingM;
 		}	
 
@@ -352,10 +361,11 @@ private:
 			GLuint BoneIndex = m_BoneMapping[NodeName];
 			glm::mat4 result = m_GlobalInverseTransform * GlobalTransformation * m_BoneInfo[BoneIndex].BoneOffset;
 			m_BoneInfo[BoneIndex].FinalTransformation = m_GlobalInverseTransform * GlobalTransformation * m_BoneInfo[BoneIndex].BoneOffset;
+			m_BoneInfo[BoneIndex].GlobalTransformation = GlobalTransformation;
 		}
 
 		for (GLuint i = 0; i < pNode->mNumChildren; i++) {
-			ReadNodeHeirarchy(AnimationTime, pNode->mChildren[i], GlobalTransformation, animationIndex);
+			ReadNodeHeirarchy(AnimationTime, pNode->mChildren[i], GlobalTransformation, animationIndex, KinematicTransforms);
 		}
 	}
 

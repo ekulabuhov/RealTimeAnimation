@@ -55,7 +55,8 @@ struct VertexBoneData {
 struct BoneInfo
 {
 	glm::mat4 BoneOffset;
-    glm::mat4 FinalTransformation;        
+    glm::mat4 FinalTransformation;   
+	glm::mat4 GlobalTransformation;
 };
 
 class Mesh {
