@@ -74,6 +74,23 @@ public:
 		this->_modelMatrix = glm::translate(this->_modelMatrix, translate);
     }
 
+	void SetPosition(glm::vec3 position) 
+	{
+		if (position.x == position.x) {
+			this->_modelMatrix[3] = glm::vec4(position, 1);
+		} else {
+			throw;
+		}
+	}
+
+	void SetRotationFromQuaternion(glm::quat quat) 
+	{
+		auto position = this->GetPosition();
+		this->_modelMatrix = glm::mat4_cast(quat);
+		this->SetPosition(position);
+		this->_quaternion = quat;
+	}
+
 	// There's an x, y, z and positional vectors in modelMatrix:
 	// xx  yx  zx  px
 	// xy  yy  zy  py
@@ -153,6 +170,7 @@ private:
 	Assimp::Importer importer;
 	int _animationIndex;
 	float _scaler;
+	glm::quat _quaternion;
 
     /*  Functions   */
     // Loads a model with supported ASSIMP extensions from file and stores the resulting meshes in the meshes vector.
@@ -346,8 +364,6 @@ private:
 
 			// EK: IK can override animations
 			if (KinematicTransforms.find(NodeName) != KinematicTransforms.end()) {
-				//glm::vec3 EulerAngles = KinematicTransforms[NodeName];
-				//glm::quat MyQuaternion(EulerAngles);
 				glm::quat MyQuaternion = KinematicTransforms[NodeName];
 				RotationM = glm::mat4_cast(MyQuaternion);
 			}
@@ -549,10 +565,10 @@ GLint TextureFromFile(const char* path, string directory)
     GLuint textureID;
     glGenTextures(1, &textureID);
     int width,height,channels;
-    unsigned char* image = SOIL_load_image(filename.c_str(), &width, &height, &channels, SOIL_LOAD_RGB);
+    unsigned char* image = SOIL_load_image(filename.c_str(), &width, &height, &channels, SOIL_LOAD_RGBA);
     // Assign texture to ID
     glBindTexture(GL_TEXTURE_2D, textureID);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, image);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, image);
     glGenerateMipmap(GL_TEXTURE_2D);	
 
     // Parameters

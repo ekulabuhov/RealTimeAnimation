@@ -5,6 +5,7 @@
 #include <glm/gtx/norm.hpp>
 #include <glm/gtc/quaternion.hpp>
 #include <glm/gtx/quaternion.hpp>
+#include <glm/gtx/matrix_decompose.hpp>
 #include <math.h>
 #define _USE_MATH_DEFINES
 
@@ -35,7 +36,7 @@ Cube *cube1, *lamp;
 Plane* plane1;
 Cone *cone1, *cone2, *cone3;
 CubeMap* cubeMap;
-Model *mainModel, *bobModel;
+Model *mainModel, *bobModel, *swatModel, *handgunModel, *estateModel;
 bool keys[1024];
 GLfloat fov = 45.0f;
 glm::mat4 projectionMatrix;
@@ -56,7 +57,7 @@ Shader shadowShader;
 glm::vec3 lightPos(-2.0f, 4.0f, -1.0f);
 glm::vec3 lightColor(1.0f, 1.0f, 1.0f);
 glm::vec3 cube1Color(1.0f, 0.5f, 0.31f);
-float runningSpeed = 2500.0f;
+float runningSpeed = 25.0f;
 float turningSpeed = 0.1f;
 float mouseSensitivity = -0.002f;
 bool isThirdPersonCamera = false;
@@ -318,6 +319,19 @@ glm::vec3 boneLocalToGlobal(glm::vec3 handVertex, std::string boneName) {
 	return glm::vec3(PosL2);
 }
 
+glm::quat gunInitialRotation(0.707f, 0.0f, -0.707f, 0.0f);
+
+void decomposeBoneMatrix(std::string boneName) {
+	int boneIndex = mainModel->m_BoneMapping[boneName];
+
+	glm::vec3 scale, translation, skew;
+	glm::vec4 persp;
+	glm::quat orientation;
+	glm::decompose(mainModel->m_BoneInfo[boneIndex].FinalTransformation, scale, orientation, translation, skew, persp);
+
+	handgunModel->SetRotationFromQuaternion(gunInitialRotation * glm::inverse(orientation));
+}
+
 glm::vec3 calculateHandNormal() {
 	glm::vec3 handHead = glm::vec3(-0.67416, -0.05412, 1.55149);
 	glm::vec3 handTail = glm::vec3(-0.75961, -0.07666, 1.54633);
@@ -332,6 +346,12 @@ glm::vec3 calculateHandTip() {
 	auto handTailG = boneLocalToGlobal(handTail, "Fbx01_R_Hand");
 	
 	return handTailG;
+}
+
+glm::vec3 calculateSwatHandPosition() {
+	glm::vec3 handHead = glm::vec3(-74.024 - 15, 144.573 - 2, -1.482);
+	auto handPosition = boneLocalToGlobal(handHead, "swat:RightHand");
+	return handPosition;
 }
 
 glm::vec3 calculateHandPosition() {
@@ -362,7 +382,7 @@ void drawFirstNormalAndTarget() {
 	//currentRotation *= rotationChange;
 	//currentRotation = glm::normalize(currentRotation);
 	//KinematicTransforms["Fbx01_R_Hand"] = currentRotation;
-	KinematicTransforms["Fbx01_R_Hand"] = currentRotation * rotationChange;
+	KinematicTransforms["Fbx01_R_Hand"] = glm::normalize(currentRotation * rotationChange);
 
 	// hand debug helper arrows
 	// glm::vec3 handPosition = calculateHandPosition();
@@ -444,7 +464,7 @@ int main()
 
 	/* Initialise vertex buffers for cube */
 	cubeMap = new CubeMap();
-	cubeMap->loadCubeMap("../textures/cubemaps/SwedishRoyalCastle/");
+	cubeMap->loadCubeMap("../textures/cubemaps/ThinMatrix/");
 
 	/* Load shaders needed */
 	skyboxShader = *ShaderManager::loadShader("skybox");
@@ -456,7 +476,7 @@ int main()
 	// Setup correct textures
 	shadowShader.enableShader();
 	glUniform1i(glGetUniformLocation(shadowShader._shaderProgramID, "diffuseTexture"), 0);
-    glUniform1i(glGetUniformLocation(shadowShader._shaderProgramID, "shadowMap"), 1);
+    glUniform1i(glGetUniformLocation(shadowShader._shaderProgramID, "shadowMap"), 2);
 
 	//Model mainModel("../models/nanosuit/nanosuit.obj");
 	//mainModel.Translate(glm::vec3(0.0f, -1.7f, 0.0f)); // Translate it down a bit so it's at the center of the scene)
@@ -480,8 +500,12 @@ int main()
 	//mainModel = new Model("../models/marine_anims.fbx");
 	//mainModel->Scale(glm::vec3(0.0001f, 0.0001f, 0.0001f));	// It's a bit too big for our scene, so scale it down
 
-	mainModel = new Model("../models/swat_anims.fbx");
-	//mainModel->Scale(glm::vec3(0.0001f, 0.0001f, 0.0001f));	// It's a bit too big for our scene, so scale it down
+	mainModel = new Model("../models/Swat.fbx");
+	mainModel->Scale(glm::vec3(0.01f, 0.01f, 0.01f));	// It's a bit too big for our scene, so scale it down
+
+	handgunModel = new Model("../models/handgun.fbx");
+
+	estateModel = new Model("../models/cs_estate/cs_estate.fbx");
 
 	KinematicTransforms["Fbx01_R_UpperArm"] = glm::quat();
 	KinematicTransforms["Fbx01_R_Forearm"] = glm::quat();
@@ -588,16 +612,18 @@ int main()
 		shadowShader.enableShader();
         // Set light uniforms 
 		shadowShader.setUniformMatrix4fv("lightSpaceMatrix", lightSpaceMatrix);
-        glActiveTexture(GL_TEXTURE1);
+        glActiveTexture(GL_TEXTURE2);
         glBindTexture(GL_TEXTURE_2D, depthMap);
 		RenderScene(shadowShader);
 
+		// Draw skybox
+		glDepthFunc(GL_LEQUAL);
 		skyboxShader.enableShader();
 		skyboxShader.setUniformMatrix4fv("projection", projectionMatrix);
-		skyboxShader.setUniformMatrix4fv("view", viewMatrix);
-		skyboxShader.setUniformMatrix4fv("model", glm::mat4());
-
+		skyboxShader.setUniformMatrix4fv("view", glm::mat4(glm::mat3(viewMatrix)));
 		cubeMap->drawSkyBox(skyboxShader);
+		glDepthFunc(GL_LESS);
+		
 		
 		glfwSwapBuffers(window);
 		glfwPollEvents();
@@ -633,6 +659,13 @@ void RenderScene(Shader shader)
 	//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 	mainModel->Draw(shader, Transforms);
 
+	glm::vec3 swatHandPosition = calculateSwatHandPosition();
+	handgunModel->SetPosition(swatHandPosition);
+	decomposeBoneMatrix("swat:RightHand");
+	handgunModel->Draw(shader);
+
+	estateModel->Draw(shader);
+
 	//cube1->rotate(glm::vec3(0, 0.01, 0));
 	shader.setUniformMatrix4fv("model", cube1->_modelMatrix);
 	cube1->draw();	
@@ -648,8 +681,6 @@ void RenderScene(Shader shader)
 	// Disable wireframe mode
 	//glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
-	shader.setUniformMatrix4fv("model", plane1->_modelMatrix);
-	plane1->draw();
 	shader.setUniformMatrix4fv("model", lamp->_modelMatrix);
 	lamp->draw();
 }
@@ -675,17 +706,19 @@ void do_movement()
 	mainModel->SetAnimationIndex(0);
 
 	if (keys[GLFW_KEY_W]) {
-		mainModel->SetAnimationIndex(11);
+		mainModel->SetAnimationIndex(1);
 		mainModel->Translate(glm::vec3(0.0f, 0.0f, runningSpeed));
 	}
 	if (keys[GLFW_KEY_S]) {
-		mainModel->SetAnimationIndex(11);
+		mainModel->SetAnimationIndex(2);
 		mainModel->Translate(glm::vec3(0.0f, 0.0f, -runningSpeed));
 	}
 	if (keys[GLFW_KEY_A]) {
+		mainModel->SetAnimationIndex(4);
 		mainModel->Translate(glm::vec3(runningSpeed / 2, 0.0f, 0.0f));
 	}
 	if (keys[GLFW_KEY_D]) {
+		mainModel->SetAnimationIndex(5);
 		mainModel->Translate(glm::vec3(-runningSpeed / 2, 0.0f, 0.0f));
 	}
 }

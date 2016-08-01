@@ -70,10 +70,7 @@
       <AdditionalDependencies>AntTweakBar64.lib;SOIL.lib;DevIL.lib;assimp.lib;glew32.lib;opengl32.lib;glfw3.lib;glfw3dll.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
-    <PostBuildEvent>
-      <Command>copy /Y "$(SolutionDir)build\$(Configuration)\lab001.exe" "$(SolutionDir)lab001"
-copy /Y "$(SolutionDir)build\$(Configuration)\lab001.pdb" "$(SolutionDir)lab001"</Command>
-    </PostBuildEvent>
+    <PostBuildEvent />
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>

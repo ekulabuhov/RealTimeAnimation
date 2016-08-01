@@ -70,7 +70,7 @@ void CubeMap::use()
 
 void CubeMap::loadCubeMap(const char* mapFolder){
 	std::stringstream map[6];
-	const char* format = ".jpg";
+	const char* format = ".png";
 
 	map[0] << mapFolder << "negz" << format;
 	map[1] << mapFolder << "posz" << format;
