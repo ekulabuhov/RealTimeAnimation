@@ -16,6 +16,7 @@
 #include "model.h"
 #include "Plane.h"
 #include "Cone.h"
+#include "Animator.h"
 
 // Function prototypes
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode);
@@ -23,10 +24,12 @@ void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
 void mouseKey_callback(GLFWwindow* window, int button, int action, int mods);
 void do_movement();
-void RenderScene(Shader shader);
+void RenderScene(Shader shader, float RunningTime);
 
 // Camera
 Camera camera(glm::vec3(0.0f, 0.5f, 5.0f));
+
+Animator animator;
 
 // Properties
 GLuint SCR_WIDTH = 800, SCR_HEIGHT = 800;
@@ -61,6 +64,7 @@ float runningSpeed = 25.0f;
 float turningSpeed = 0.1f;
 float mouseSensitivity = -0.002f;
 bool isThirdPersonCamera = false;
+long long m_startTime = GetTickCount();
 
 bool initWindow()
 {
@@ -451,6 +455,19 @@ void drawThirdNormalAndTarget() {
 	// upperArmTarget->set(upperArmPosition, upperArmPosition + endVector);
 }
 
+void introScene(float AnimationTime) {
+	glm::vec3 translation;
+	glm::quat rotation;
+	int boneAnimIndex;
+	animator.PlayAnimation(0, AnimationTime, translation, rotation, boneAnimIndex, "Camera");
+	camera.Position = translation;
+	camera.SetRotationFromQuaternion(rotation);
+
+	animator.PlayAnimation(0, AnimationTime, translation, rotation, boneAnimIndex, "Swat");
+	mainModel->SetPosition(translation);
+	mainModel->SetRotationFromQuaternion(rotation);
+	mainModel->SetAnimationIndex(boneAnimIndex);
+}
 
 int main()
 {
@@ -582,9 +599,16 @@ int main()
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		do_movement();
 		camera.IsThirdPersonCamera = isThirdPersonCamera;
+
+		// Camera animation script
+		float RunningTime = (float)((double)GetTickCount() - (double)m_startTime) / 1000.0f;
+		introScene(RunningTime);
+
 		viewMatrix = camera.GetViewMatrix(mainModel->GetYRotation(), mainModel->GetPosition());
 
 		//mainModel->SetAnimationIndex(o1->selectedAnimationIndex);
+
+		
 
 		// 1. Render depth of scene to texture (from light's perspective)
         // - Get light projection/view matrix.
@@ -602,7 +626,7 @@ int main()
         glViewport(0, 0, SHADOW_WIDTH, SHADOW_HEIGHT);
         glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
         glClear(GL_DEPTH_BUFFER_BIT);
-        RenderScene(simpleDepthShader);
+        RenderScene(simpleDepthShader, RunningTime);
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 		//viewMatrix = lightSpaceMatrix;
@@ -614,7 +638,7 @@ int main()
 		shadowShader.setUniformMatrix4fv("lightSpaceMatrix", lightSpaceMatrix);
         glActiveTexture(GL_TEXTURE2);
         glBindTexture(GL_TEXTURE_2D, depthMap);
-		RenderScene(shadowShader);
+		RenderScene(shadowShader, RunningTime);
 
 		// Draw skybox
 		glDepthFunc(GL_LEQUAL);
@@ -636,9 +660,7 @@ int main()
 	return 0;
 }
 
-long long m_startTime = GetTickCount();
-
-void RenderScene(Shader shader)
+void RenderScene(Shader shader, float RunningTime)
 {
 	shader.enableShader();
 	shader.setUniformMatrix4fv("projection", projectionMatrix);
@@ -646,9 +668,6 @@ void RenderScene(Shader shader)
 	shader.setUniformVector3f("lightPos", lightPos);
 	shader.setUniformVector3f("viewPos", camera.Position);
 	shader.setUniform1f("shadows", 1);
-
-
-	float RunningTime = (float)((double)GetTickCount() - (double)m_startTime) / 1000.0f;
 
 	vector<glm::mat4> Transforms;
 	bobModel->BoneTransform(RunningTime, Transforms, KinematicTransforms);

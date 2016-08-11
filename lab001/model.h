@@ -67,6 +67,7 @@ public:
 		this->_modelMatrix = glm::scale(this->_modelMatrix, scale);
 		// EK: for now I'm assuming that the model is scaled evenly in all dimensions
 		this->_scaler = scale.x;
+		this->_scale = scale;
     }
 
 	void Translate(glm::vec3 translate)
@@ -86,8 +87,12 @@ public:
 	void SetRotationFromQuaternion(glm::quat quat) 
 	{
 		auto position = this->GetPosition();
+
+		// Rebuild the matrix - equivalent of threejs matrix.compose
 		this->_modelMatrix = glm::mat4_cast(quat);
+		this->Scale(this->_scale);
 		this->SetPosition(position);
+
 		this->_quaternion = quat;
 	}
 
@@ -171,6 +176,7 @@ private:
 	int _animationIndex;
 	float _scaler;
 	glm::quat _quaternion;
+	glm::vec3 _scale;
 
     /*  Functions   */
     // Loads a model with supported ASSIMP extensions from file and stores the resulting meshes in the meshes vector.

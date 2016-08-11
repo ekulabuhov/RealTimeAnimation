@@ -9,8 +9,6 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
-
-
 // Defines several possible options for camera movement. Used as abstraction to stay away from window-system specific input methods
 enum Camera_Movement {
     FORWARD,
@@ -69,10 +67,15 @@ public:
         this->updateCameraVectors();
     }
 
+	void SetRotationFromQuaternion(glm::quat rotation) {
+		// Grab a Forward vector and multiply it by quaternion, pass it back to lookAt
+		this->Front = glm::vec3(0.0f, 0.0f, -1.0f) * rotation;
+	}
+
     // Returns the view matrix calculated using Eular Angles and the LookAt Matrix
     glm::mat4 GetViewMatrix(float playerRotation, glm::vec3 playerPosition)
     {
-		if (this->IsThirdPersonCamera) {
+			if (this->IsThirdPersonCamera) {
 			// Get the camera behind the character and lift it up a little
 			float theta = -playerRotation;
 			float offsetX = this->calculateHorizontalDistance() * sin(theta * M_PI / 180);
@@ -143,8 +146,7 @@ public:
             this->Zoom = 45.0f;
     }
 
-private:
-    // Calculates the front vector from the Camera's (updated) Eular Angles
+	// Calculates the front vector from the Camera's (updated) Eular Angles
     void updateCameraVectors()
     {
         // Calculate the new Front vector
@@ -158,6 +160,7 @@ private:
         this->Up    = glm::normalize(glm::cross(this->Right, this->Front));
     }
 
+private:
 	float calculateHorizontalDistance() 
 	{
 		return distanceFromPlayer * cos(this->Pitch * M_PI / 180);
