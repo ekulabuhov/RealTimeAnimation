@@ -59,8 +59,6 @@ CubeMap::CubeMap()
 
 	glBindBuffer(GL_ARRAY_BUFFER, NULL);
 	glBindVertexArray(NULL);
-
-	ilInit();
 }
 
 void CubeMap::use()
@@ -129,33 +127,27 @@ bool CubeMap::load_cube_map_side (
 	GLuint texture, GLenum side_target, const char* file_name
 	) {
 	glBindTexture (GL_TEXTURE_CUBE_MAP, texture);
-	ILuint imageID;
-	ilGenImages(1, &imageID);
-	ilBindImage(imageID);
-	ilEnable(IL_ORIGIN_SET);
-	ilOriginFunc(IL_ORIGIN_UPPER_LEFT/*IL_ORIGIN_LOWER_LEFT*/);
+	int width, height;
+	unsigned char* image;
+	image = SOIL_load_image(file_name, &width, &height, 0, SOIL_LOAD_RGB);
 
-	ILboolean success = ilLoadImage((ILstring)file_name);
-
-	if(success){
-		ilConvertImage(IL_RGBA, IL_UNSIGNED_BYTE);
-			
-
+	if(image != NULL){
 		// copy image data into 'target' side of cube map
 		glTexImage2D (
 			side_target,
 			0,
-			GL_RGBA,
-			ilGetInteger(IL_IMAGE_WIDTH),
-			ilGetInteger(IL_IMAGE_HEIGHT),
+			GL_RGB,
+			width,
+			height,
 			0,
-			GL_RGBA,
+			GL_RGB,
 			GL_UNSIGNED_BYTE,
-			ilGetData()
+			image
 			);
 		return true;
 	}else{
 		std::cout << "Couldn't load texture: " << file_name << std::endl;
+        return false;
 	}
 }
 

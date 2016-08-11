@@ -49,7 +49,7 @@ public:
 		for (GLuint i = 0 ; i < Transforms.size() ; i++) {
 			char Name[128];
 			memset(Name, 0, sizeof(Name));
-			_snprintf_s(Name, sizeof(Name), "gBones[%d]", i);
+			sprintf(Name, "gBones[%d]", i);
             shader.setUniformMatrix4fv(Name, Transforms[i]);
         }
 		this->Draw(shader);

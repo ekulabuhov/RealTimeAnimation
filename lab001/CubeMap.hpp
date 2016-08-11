@@ -1,18 +1,14 @@
 #pragma once
 
-#include <IL\il.h>
+#include <SOIL.h>
 #include <sstream>
 #include <iostream>
-#include <Windows.h>
-#include <GL\glew.h>
-#include <GL\GL.h>
+#include <GL/glew.h>
 #include "Shader.hpp"
 
 
 class CubeMap{
 private:
-	//static ILuint* imageIDs;
-	//static GLuint* textureIDs;
 	void create_cube_map (
 	const char* front,
 	const char* back,
@@ -26,7 +22,7 @@ private:
 	GLuint _VAO;
 	GLuint _EBO;
 
-	bool CubeMap::load_cube_map_side (GLuint texture, GLenum side_target, const char* file_name);
+	bool load_cube_map_side (GLuint texture, GLenum side_target, const char* file_name);
 
 public:
 	CubeMap();

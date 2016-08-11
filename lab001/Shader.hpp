@@ -6,9 +6,9 @@
 #include <sstream>
 #include <map>
 
-#include <GL\glew.h>
-#include <glm\mat4x4.hpp>
-#include <glm\vec3.hpp>
+#include <GL/glew.h>
+#include <glm/mat4x4.hpp>
+#include <glm/vec3.hpp>
 
 class Shader
 {

@@ -1,12 +1,13 @@
 #include <iostream>
 
-#include <GL\glew.h>
+#include <GL/glew.h>
 #include <GLFW/glfw3.h>
 #include <glm/gtx/norm.hpp>
 #include <glm/gtc/quaternion.hpp>
 #include <glm/gtx/quaternion.hpp>
 #include <glm/gtx/matrix_decompose.hpp>
 #include <math.h>
+#include <sys/timeb.h>
 #define _USE_MATH_DEFINES
 
 #include "ShaderManager.hpp"
@@ -25,6 +26,7 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos);
 void mouseKey_callback(GLFWwindow* window, int button, int action, int mods);
 void do_movement();
 void RenderScene(Shader shader, float RunningTime);
+int GetMilliCount();
 
 // Camera
 Camera camera(glm::vec3(0.0f, 0.5f, 5.0f));
@@ -64,7 +66,7 @@ float runningSpeed = 25.0f;
 float turningSpeed = 0.1f;
 float mouseSensitivity = -0.002f;
 bool isThirdPersonCamera = false;
-long long m_startTime = GetTickCount();
+long long m_startTime = GetMilliCount();
 
 bool initWindow()
 {
@@ -78,6 +80,7 @@ bool initWindow()
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 2);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 
 	window = glfwCreateWindow(800, 800, "Assignment #4 (Final) - OpenGL", NULL, NULL);
 	if (!window)
@@ -168,38 +171,9 @@ void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
 		fov = 45.0f;
 }
 
-#include "windows.h"
-#include "MyForm.h"
-
-using namespace lab001;
-
-public ref class X
-{
-public:
-	static MyForm^ myForm = gcnew MyForm();
-	int selectedAnimationIndex;
-	bool thirdPersonCamera;
-	float cubeX, cubeY, cubeZ;
-	void EntryPoint()
-	{
-		Application::EnableVisualStyles();
-		Application::Run(myForm);
-	}
-
-	void Update()
-	{
-		this->selectedAnimationIndex = myForm->animationDropDown->SelectedIndex;
-		this->thirdPersonCamera = myForm->cbThirdPersonCamera->Checked;
-
-		this->cubeX = myForm->tbCubeX->Value / 10.0f;
-		this->cubeY = myForm->tbCubeY->Value / 10.0f;
-		this->cubeZ = myForm->tbCubeZ->Value / 10.0f;
-	}
-};
-
 glm::mat4 makeXRotation(double angleInRadians) {
-	auto c = Math::Cos(angleInRadians);
-	auto s = Math::Sin(angleInRadians);
+	auto c = cos(angleInRadians);
+	auto s = sin(angleInRadians);
 	auto m = glm::mat4(
 		1, 0, 0, 0, // first column (not row!)
 		0, c, -s, 0, // second column
@@ -211,8 +185,8 @@ glm::mat4 makeXRotation(double angleInRadians) {
 }
 
 glm::mat4 makeYRotation(double angleInRadians) {
-	auto c = Math::Cos(angleInRadians);
-	auto s = Math::Sin(angleInRadians);
+	auto c = cos(angleInRadians);
+	auto s = sin(angleInRadians);
 	auto m = glm::mat4(
 		c, 0, s, 0, // first column (not row!)
 		0, 1, 0, 0, // second column
@@ -224,8 +198,8 @@ glm::mat4 makeYRotation(double angleInRadians) {
 }
 
 glm::mat4 makeZRotation(double angleInRadians) {
-	auto c = Math::Cos(angleInRadians);
-	auto s = Math::Sin(angleInRadians);
+	auto c = cos(angleInRadians);
+	auto s = sin(angleInRadians);
 	auto m = glm::mat4(
 		c, -s, 0, 0, // first column (not row!)
 		s, c, 0, 0, // second column
@@ -242,7 +216,7 @@ glm::quat rotateMatrix(glm::vec3 startVector, glm::vec3 endVector) {
 	glm::vec3 axis;
 	glm::quat quaternion;
 
-	float angle = Math::Acos(glm::dot(startVector, endVector));
+	float angle = acos(glm::dot(startVector, endVector));
 
 	if (angle == angle) {
 
@@ -301,9 +275,6 @@ void handleRotation(glm::vec3 startVector, glm::vec3 endVector, Geometry *obj) {
 glm::vec3 calculateConeNormal() {
 	return glm::normalize(cone1->getUpVector());
 }
-
-using namespace System::Threading;
-
 
 // returns EulerAngles
 glm::quat handleRotation(glm::vec3 startVector, glm::vec3 endVector) {
@@ -471,10 +442,6 @@ void introScene(float AnimationTime) {
 
 int main()
 {
-	X^ o1 = gcnew X();
-	Thread^ thread = gcnew Thread(gcnew ThreadStart(o1, &X::EntryPoint));
-	thread->Start();	
-	
 	/* Create GL Window */
 	if (!initWindow())
 		return -1;
@@ -592,7 +559,7 @@ int main()
 		if (b3)
 			drawThirdNormalAndTarget();
 
-		cube1->setPosition(glm::vec3(o1->cubeX/1.0f, o1->cubeY/1.0f, o1->cubeZ/1.0f));
+		// cube1->setPosition(glm::vec3(o1->cubeX/1.0f, o1->cubeY/1.0f, o1->cubeZ/1.0f));
 
 		/* Rendering Code */
 		//glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
@@ -601,7 +568,7 @@ int main()
 		camera.IsThirdPersonCamera = isThirdPersonCamera;
 
 		// Camera animation script
-		float RunningTime = (float)((double)GetTickCount() - (double)m_startTime) / 1000.0f;
+		float RunningTime = (float)((double)GetMilliCount() - (double)m_startTime) / 1000.0f;
 		introScene(RunningTime);
 
 		viewMatrix = camera.GetViewMatrix(mainModel->GetYRotation(), mainModel->GetPosition());
@@ -631,7 +598,7 @@ int main()
 
 		//viewMatrix = lightSpaceMatrix;
 		// 2. Render scene as normal 
-        glViewport(0, 0, SCR_WIDTH, SCR_HEIGHT);
+        glViewport(0, 0, 1600, 1600);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		shadowShader.enableShader();
         // Set light uniforms 
@@ -651,13 +618,23 @@ int main()
 		
 		glfwSwapBuffers(window);
 		glfwPollEvents();
-		o1->myForm->Invoke(gcnew Action(o1, &X::Update) /*, xRotAngle, yRotAngle, zRotAngle*/);
-		isThirdPersonCamera = o1->thirdPersonCamera;
+		// isThirdPersonCamera = o1->thirdPersonCamera;
 	}
 
 	glfwTerminate();
-	thread->Abort();
 	return 0;
+}
+
+// Grabbed it here: http://www.firstobject.com/getmillicount-milliseconds-portable-c++.htm
+int GetMilliCount()
+{
+    // Something like GetTickCount but portable
+    // It rolls over every ~ 12.1 days (0x100000/24/60/60)
+    // Use GetMilliSpan to correct for rollover
+    timeb tb;
+    ftime( &tb );
+    int nCount = tb.millitm + (tb.time & 0xfffff) * 1000;
+    return nCount;
 }
 
 void RenderScene(Shader shader, float RunningTime)
