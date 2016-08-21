@@ -169,7 +169,7 @@ public:
 
 	void PlayAnimation(int animationIndex, float animationTime, glm::vec3& Translation, glm::quat& Rotation, int& boneAnimIndex, string trackName) {		
 		// This makes animation loop at the end
-		animationTime = fmod(animationTime, 7.0f);
+		// animationTime = fmod(animationTime, 7.0f);
 		GLuint animationFrame = animationTime * 30;
 
 		Transformations frames = tracks[trackName];

@@ -9,6 +9,7 @@
 #include <math.h>
 #include <sys/timeb.h>
 #define _USE_MATH_DEFINES
+#include <AntTweakBar.h>
 
 #include "ShaderManager.hpp"
 #include "CubeMap.hpp"
@@ -62,11 +63,14 @@ Shader shadowShader;
 glm::vec3 lightPos(-2.0f, 4.0f, -1.0f);
 glm::vec3 lightColor(1.0f, 1.0f, 1.0f);
 glm::vec3 cube1Color(1.0f, 0.5f, 0.31f);
-float runningSpeed = 25.0f;
+float runningSpeed = 860.0f;
 float turningSpeed = 0.1f;
 float mouseSensitivity = -0.002f;
 bool isThirdPersonCamera = false;
 long long m_startTime = GetMilliCount();
+float currentIntroTime = 0.0f;
+float cubeX = 0.0f, cubeY = 6.5f, cubeZ = 0.0f;
+int selectedAnimationIndex;
 
 bool initWindow()
 {
@@ -94,7 +98,8 @@ bool initWindow()
 	glfwMakeContextCurrent(window);
 	glfwSetKeyCallback(window, key_callback);
 	glfwSetScrollCallback(window, scroll_callback);
-	
+
+    glfwSetCursorPosCallback(window, mouse_callback);
 	glfwSetMouseButtonCallback(window, mouseKey_callback);
 
 	std::cout << "OpenGL version: " << glGetString(GL_VERSION) << std::endl;
@@ -114,10 +119,57 @@ bool initWindow()
 	return true;
 }
 
+/* This callback resets Intro play time, allowing intro to run again */
+void TW_CALL RunIntroCB(void *)
+{
+    camera.Pitch = 0.0f;
+    camera.Yaw = -90.0f;
+    currentIntroTime = (GetMilliCount() - m_startTime) / 1000.0f;
+    isThirdPersonCamera = false;
+}
+
+void initUI()
+{
+    TwInit(TW_OPENGL_CORE, NULL);
+    TwWindowSize(SCR_WIDTH * 2, SCR_HEIGHT * 2);
+
+    TwBar *myBar;
+    myBar = TwNewBar("MyTweakBar");
+
+    float rotSpeed = 0;
+    TwAddVarRW(myBar, "cubeX", TW_TYPE_FLOAT, &cubeX, " min=-10 max=10 step=0.01 group=Cube label='X' ");
+    TwAddVarRW(myBar, "cubeY", TW_TYPE_FLOAT, &cubeY, " min=-10 max=10 step=0.01 group=Cube label='Y' ");
+    TwAddVarRW(myBar, "cubeZ", TW_TYPE_FLOAT, &cubeZ, " min=-10 max=10 step=0.01 group=Cube label='Z' ");
+    TwAddVarRW(myBar, "runningSpeed", TW_TYPE_FLOAT, &runningSpeed, " min=0 max=2500 step=10 label='Running Speed' ");
+    TwAddButton(myBar, "Play Intro", RunIntroCB, NULL, " label='Play Intro' ");
+    TwAddVarRW(myBar, "3rd person camera", TW_TYPE_BOOLCPP, &isThirdPersonCamera, " label='3rd person camera' ");
+
+    // Defining an empty season enum type
+    TwType animationType = TwDefineEnum("AnimationType", NULL, 0);
+    TwAddVarRW(myBar, "Soldier Animation", animationType, &selectedAnimationIndex, " enum='0 {Idle}, "
+            "1 {Idle with Gun}, "
+            "2 {Idle with Gun Aiming}, "
+            "3 {Idle with gun firing}, "
+            "4 {Kneel firing}, "
+            "5 {Kneel idle}, "
+            "6 {Jump}, "
+            "7 {Kick ball}, "
+            "8 {Chicken Dance}, "
+            "9 {Cat}, "
+            "10 {Salsa}, "
+            "11 {Run}, "
+            "12 {Run with gun}, "
+            "13 {T-Pose}, "
+            "14 {Walk}, "
+            "15 {Walk with gun}' ");
+}
+
 void mouseKey_callback(GLFWwindow* window, int button, int action, int mods)
 {
-	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);  
-	glfwSetCursorPosCallback(window, mouse_callback); 
+    if (!TwEventMouseButtonGLFW(button, action)) {
+        // If not handled by AntTweakBar, lock the cursor
+        glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+    }
 }
 
 // Is called whenever a key is pressed/released via GLFW
@@ -126,10 +178,8 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 	//cout << key << endl;
 	if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
 	{
-		glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL); 
-		glfwSetCursorPosCallback(window, NULL); 
+		glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
 		firstMouse = true;
-		//glfwSetWindowShouldClose(window, GL_TRUE);
 	}
 	if (key >= 0 && key < 1024)
 	{
@@ -142,6 +192,15 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 
 void mouse_callback(GLFWwindow* window, double xpos, double ypos)
 {
+    int cursorMode = glfwGetInputMode(window, GLFW_CURSOR);
+
+    if (cursorMode == GLFW_CURSOR_NORMAL)
+    {
+        TwEventMousePosGLFW(xpos * 2, ypos * 2);  // send event to AntTweakBar
+        // Event was handled by AntTweakBar, return
+        return;
+    }
+
 	if (firstMouse)
 	{
 		lastMouseX = xpos;
@@ -427,6 +486,14 @@ void drawThirdNormalAndTarget() {
 }
 
 void introScene(float AnimationTime) {
+    AnimationTime = AnimationTime - currentIntroTime;
+    if (AnimationTime > 7.0f) {
+        if (AnimationTime < 8.0f) {
+            isThirdPersonCamera = true;
+        }
+        return;
+    }
+
 	glm::vec3 translation;
 	glm::quat rotation;
 	int boneAnimIndex;
@@ -435,9 +502,9 @@ void introScene(float AnimationTime) {
 	camera.SetRotationFromQuaternion(rotation);
 
 	animator.PlayAnimation(0, AnimationTime, translation, rotation, boneAnimIndex, "Swat");
-	mainModel->SetPosition(translation);
-	mainModel->SetRotationFromQuaternion(rotation);
-	mainModel->SetAnimationIndex(boneAnimIndex);
+	swatModel->SetPosition(translation);
+    swatModel->SetRotationFromQuaternion(rotation);
+    swatModel->SetAnimationIndex(boneAnimIndex);
 }
 
 int main()
@@ -445,6 +512,9 @@ int main()
 	/* Create GL Window */
 	if (!initWindow())
 		return -1;
+
+    /* Init AntTweakBar UI */
+    initUI();
 
 	/* Initialise vertex buffers for cube */
 	cubeMap = new CubeMap();
@@ -481,11 +551,13 @@ int main()
 
 	//mainModel = new Model("../models/boblampclean.md5mesh");
 	//mainModel = new Model("../models/marine_anims.dae");
-	//mainModel = new Model("../models/marine_anims.fbx");
-	//mainModel->Scale(glm::vec3(0.0001f, 0.0001f, 0.0001f));	// It's a bit too big for our scene, so scale it down
+	mainModel = new Model("../models/marine_anims.fbx");
+	mainModel->Scale(glm::vec3(0.0001f, 0.0001f, 0.0001f));	// It's a bit too big for our scene, so scale it down
+    mainModel->SetPosition(glm::vec3(-10.0f, 0.0f, 13.5f));
+    mainModel->Rotate(glm::vec3(0, M_PI/2, 0));
 
-	mainModel = new Model("../models/Swat.fbx");
-	mainModel->Scale(glm::vec3(0.01f, 0.01f, 0.01f));	// It's a bit too big for our scene, so scale it down
+	swatModel = new Model("../models/Swat.fbx");
+	swatModel->Scale(glm::vec3(0.01f, 0.01f, 0.01f));	// It's a bit too big for our scene, so scale it down
 
 	handgunModel = new Model("../models/handgun.fbx");
 
@@ -495,8 +567,9 @@ int main()
 	KinematicTransforms["Fbx01_R_Forearm"] = glm::quat();
 	KinematicTransforms["Fbx01_R_Hand"] = glm::quat();
 
-	glm::vec3 cube1Position(5.0f, 0.5f, 0.0F);
+	glm::vec3 cube1Position(cubeX, cubeY, cubeZ);
 	cube1 = new Cube(&shadowShader, cube1Position);
+    cube1->scale(glm::vec3(0.2f));
 
 	cone1 = new Cone(&shadowShader);
 	cone1->setPosition(glm::vec3(2.0f, 6.0f, 0.0f));
@@ -510,9 +583,6 @@ int main()
 
 	lamp = new Cube(&shadowShader, lightPos);
 	lamp->scale(glm::vec3(0.2f));
-
-	glm::vec3 plane1Position(0.0f, 0.0f, 0.0F);
-	plane1 = new Plane(&shadowShader, plane1Position, "../textures/wood.png");
 
 	// Configure depth map FBO
     const GLuint SHADOW_WIDTH = 1024, SHADOW_HEIGHT = 1024;
@@ -559,7 +629,7 @@ int main()
 		if (b3)
 			drawThirdNormalAndTarget();
 
-		// cube1->setPosition(glm::vec3(o1->cubeX/1.0f, o1->cubeY/1.0f, o1->cubeZ/1.0f));
+        cube1->setPosition(glm::vec3(cubeX, cubeY, cubeZ));
 
 		/* Rendering Code */
 		//glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
@@ -573,9 +643,9 @@ int main()
 
 		viewMatrix = camera.GetViewMatrix(mainModel->GetYRotation(), mainModel->GetPosition());
 
-		//mainModel->SetAnimationIndex(o1->selectedAnimationIndex);
-
-		
+        if (glfwGetInputMode(window, GLFW_CURSOR) == GLFW_CURSOR_NORMAL) {
+            mainModel->SetAnimationIndex(selectedAnimationIndex);
+        }
 
 		// 1. Render depth of scene to texture (from light's perspective)
         // - Get light projection/view matrix.
@@ -614,13 +684,14 @@ int main()
 		skyboxShader.setUniformMatrix4fv("view", glm::mat4(glm::mat3(viewMatrix)));
 		cubeMap->drawSkyBox(skyboxShader);
 		glDepthFunc(GL_LESS);
-		
-		
+
+        TwDraw();  // draw the tweak bar(s)
+
 		glfwSwapBuffers(window);
 		glfwPollEvents();
-		// isThirdPersonCamera = o1->thirdPersonCamera;
 	}
 
+    TwTerminate();
 	glfwTerminate();
 	return 0;
 }
@@ -649,11 +720,15 @@ void RenderScene(Shader shader, float RunningTime)
 	vector<glm::mat4> Transforms;
 	bobModel->BoneTransform(RunningTime, Transforms, KinematicTransforms);
 	bobModel->Draw(shader, Transforms);
+
 	mainModel->BoneTransform(RunningTime, Transforms, KinematicTransforms);
+    mainModel->Draw(shader, Transforms);
+
+    swatModel->BoneTransform(RunningTime, Transforms, KinematicTransforms);
+    swatModel->Draw(shader, Transforms);
 
 	// Draw in wireframe mode
 	//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-	mainModel->Draw(shader, Transforms);
 
 	glm::vec3 swatHandPosition = calculateSwatHandPosition();
 	handgunModel->SetPosition(swatHandPosition);
@@ -702,19 +777,19 @@ void do_movement()
 	mainModel->SetAnimationIndex(0);
 
 	if (keys[GLFW_KEY_W]) {
-		mainModel->SetAnimationIndex(1);
+		mainModel->SetAnimationIndex(11);
 		mainModel->Translate(glm::vec3(0.0f, 0.0f, runningSpeed));
 	}
 	if (keys[GLFW_KEY_S]) {
-		mainModel->SetAnimationIndex(2);
+		mainModel->SetAnimationIndex(11);
 		mainModel->Translate(glm::vec3(0.0f, 0.0f, -runningSpeed));
 	}
 	if (keys[GLFW_KEY_A]) {
-		mainModel->SetAnimationIndex(4);
+		mainModel->SetAnimationIndex(14);
 		mainModel->Translate(glm::vec3(runningSpeed / 2, 0.0f, 0.0f));
 	}
 	if (keys[GLFW_KEY_D]) {
-		mainModel->SetAnimationIndex(5);
+		mainModel->SetAnimationIndex(14);
 		mainModel->Translate(glm::vec3(-runningSpeed / 2, 0.0f, 0.0f));
 	}
 }
