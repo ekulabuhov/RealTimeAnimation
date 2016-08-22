@@ -18,6 +18,8 @@ private:
 	
 	glm::mat4 _projectionMatrix;
 	GLuint textureId;
+	GLenum textureTarget;
+	GLenum drawMode;
 
 	GLuint _VBO;
 	GLuint _VAO;
@@ -27,9 +29,21 @@ private:
 
 	GLuint _triangleCount;
 
+	void Init(Shader* shader, glm::vec3 position,
+			  GLfloat vertices[], int sizeOfVertices, GLuint texId = NULL, GLenum textureTarget = NULL);
+
 public:
+	// this overload is useful when you need to load a texture
 	Geometry(Shader* shader, glm::vec3 position,
-		GLfloat vertices[], int sizeOfVertices, GLchar* texturePath = NULL);
+			 GLfloat vertices[], int sizeOfVertices, GLchar* texturePath);
+
+	// this overload is useful when you have a texture loaded already (for cubemaps or render buffers)
+	Geometry(Shader* shader, glm::vec3 position,
+			 GLfloat vertices[], int sizeOfVertices, GLuint texId, GLenum textureTarget);
+
+	// this overload is useful when you don't need a texture
+	Geometry(Shader* shader, glm::vec3 position,
+			 GLfloat vertices[], int sizeOfVertices);
 
 	void draw();
 

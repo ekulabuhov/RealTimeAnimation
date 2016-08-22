@@ -3,15 +3,39 @@
 GLuint loadTexture(GLchar* path);
 
 Geometry::Geometry(Shader* shader, glm::vec3 position,
-				   GLfloat vertices[], int sizeOfVertices, GLchar* texturePath)
+				   GLfloat vertices[], int sizeOfVertices) {
+	Init(shader, position, vertices, sizeOfVertices);
+}
+
+Geometry::Geometry(Shader* shader, glm::vec3 position,
+				   GLfloat vertices[], int sizeOfVertices, GLchar* texturePath) {
+
+	int attribSize = texturePath ? 8 : 6;
+
+	if (texturePath) {
+		this->textureId = loadTexture(texturePath);
+	}
+
+	Init(shader, position, vertices, sizeOfVertices, this->textureId, GL_TEXTURE_2D);
+}
+
+Geometry::Geometry(Shader* shader, glm::vec3 position,
+				   GLfloat vertices[], int sizeOfVertices, GLuint texId, GLenum textureTarget) {
+	Init(shader, position, vertices, sizeOfVertices, texId, textureTarget);
+}
+
+void Geometry::Init(Shader* shader, glm::vec3 position,
+					GLfloat vertices[], int sizeOfVertices, GLuint texId, GLenum textureTarget)
 {
-	this->textureId = NULL;
+	this->textureId = texId;
+	this->textureTarget = textureTarget;
 	this->_shader = shader;
 	this->_modelMatrix = glm::mat4();
 	this->_modelMatrix = glm::translate(this->_modelMatrix, position);
 	this->quaternion = glm::quat();
+	this->drawMode = GL_TRIANGLES;
 
-	int attribSize = texturePath ? 8 : 6;
+	int attribSize = textureTarget == GL_TEXTURE_2D ? 8 : 6;
 	this->_triangleCount = sizeOfVertices / attribSize;
 
 	/* Get GL to allocate space for our array buffers */
@@ -21,7 +45,7 @@ Geometry::Geometry(Shader* shader, glm::vec3 position,
 
 	/* Tell GL we're now working on our Vertex Array Object */
 	glBindVertexArray(this->_VAO);
-	
+
 	/* Give GL our vertices */
 	glBindBuffer(GL_ARRAY_BUFFER, this->_VBO);
 	glBufferData(GL_ARRAY_BUFFER, sizeOfVertices, vertices, GL_STATIC_DRAW);
@@ -39,11 +63,9 @@ Geometry::Geometry(Shader* shader, glm::vec3 position,
 	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, attribSize * sizeof(GLfloat), (GLvoid*)(3* sizeof(GLfloat)));
 	glEnableVertexAttribArray(1);
 
-	if (texturePath) {
+	if (textureTarget == GL_TEXTURE_2D) {
 		glEnableVertexAttribArray(2);
 		glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, attribSize * sizeof(GLfloat), (GLvoid*)(6 * sizeof(GLfloat)));
-
-		this->textureId = loadTexture(texturePath);
 	}
 
 	/* Tell GL we don't need to work on our buffers any more */

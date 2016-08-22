@@ -40,7 +40,7 @@ GLuint SCR_WIDTH = 800, SCR_HEIGHT = 800;
 
 GLFWwindow* window;
 Cube *cube1, *lamp;
-Plane* plane1;
+Plane *plane1, *reflectionPlane;
 Cone *cone1, *cone2, *cone3;
 CubeMap* cubeMap;
 Model *mainModel, *bobModel, *swatModel, *handgunModel, *estateModel;
@@ -609,6 +609,8 @@ int main()
 	cube1 = new Cube(&lightingShader, cube1Position);
     cube1->scale(glm::vec3(0.1f));
 
+	plane1 = new Plane(&shadowShader, glm::vec3(0.0f, 2.0f, 0.0f), "../textures/wood.png");
+
 	cone1 = new Cone(&shadowShader);
 	cone1->setPosition(glm::vec3(2.0f, 6.0f, 0.0f));
 
@@ -624,27 +626,7 @@ int main()
 
 	//************************* Water Renderer Setup **************************/
 	WaterFrameBuffers* fbos = new WaterFrameBuffers();
-
-	// Configure depth map FBO
-    const GLuint SHADOW_WIDTH = 1024, SHADOW_HEIGHT = 1024;
-    GLuint depthMapFBO;
-    glGenFramebuffers(1, &depthMapFBO);
-    // - Create depth texture
-    GLuint depthMap;
-    glGenTextures(1, &depthMap);
-    glBindTexture(GL_TEXTURE_2D, depthMap);
-    
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, SHADOW_WIDTH, SHADOW_HEIGHT, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT); 
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-    
-    glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depthMap, 0);
-    glDrawBuffer(GL_NONE);
-    glReadBuffer(GL_NONE);
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	reflectionPlane = new Plane(&lightingShader, glm::vec3(1.0f, 1.0f, 0.0f), fbos->getReflectionTexture());
 
 	projectionMatrix = glm::perspective(
 		45.0f,
@@ -695,34 +677,14 @@ int main()
             mainModel->SetAnimationIndex(selectedAnimationIndex);
         }
 
-		// 1. Render depth of scene to texture (from light's perspective)
-        // - Get light projection/view matrix.
-        glm::mat4 lightProjection, lightView;
-        glm::mat4 lightSpaceMatrix;
-        GLfloat near_plane = 1.0f, far_plane = 7.5f;
-        lightProjection = glm::ortho(-10.0f, 10.0f, -10.0f, 10.0f, near_plane, far_plane);
-        lightView = glm::lookAt(lightPos, glm::vec3(0.0f), glm::vec3(1.0));
-        lightSpaceMatrix = lightProjection * lightView;
-		
-        // - render scene from light's point of view
-		simpleDepthShader.enableShader();
-		simpleDepthShader.setUniformMatrix4fv("lightSpaceMatrix", lightSpaceMatrix);
+		// Water simulation
+		fbos->bindReflectionFrameBuffer();
+		RenderScene(shadowShader, RunningTime);
+		fbos->unbindCurrentFrameBuffer();
 
-        glViewport(0, 0, SHADOW_WIDTH, SHADOW_HEIGHT);
-        glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
-        glClear(GL_DEPTH_BUFFER_BIT);
-        RenderScene(simpleDepthShader, RunningTime);
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-		//viewMatrix = lightSpaceMatrix;
 		// 2. Render scene as normal 
         glViewport(0, 0, 1600, 1600);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		shadowShader.enableShader();
-        // Set light uniforms 
-		shadowShader.setUniformMatrix4fv("lightSpaceMatrix", lightSpaceMatrix);
-        glActiveTexture(GL_TEXTURE2);
-        glBindTexture(GL_TEXTURE_2D, depthMap);
 		RenderScene(shadowShader, RunningTime);
 
 		// Draw skybox
@@ -788,7 +750,12 @@ void RenderScene(Shader shader, float RunningTime)
 
 	estateModel->Draw(shader);
 
-	//cube1->rotate(glm::vec3(0, 0.01, 0));
+	//shader.setUniformMatrix4fv("model", plane1->_modelMatrix);
+	//plane1->draw();
+
+	shader.setUniformMatrix4fv("model", reflectionPlane->_modelMatrix);
+	reflectionPlane->draw();
+
 	shader.setUniformMatrix4fv("model", cube1->_modelMatrix);
     shader.setUniform1f("utilityColor", 1);
 	cube1->draw();	
@@ -803,6 +770,7 @@ void RenderScene(Shader shader, float RunningTime)
         shader.setUniformMatrix4fv("model", cone3->_modelMatrix);
         cone3->draw();
     }
+
 
     shader.setUniformMatrix4fv("model", lamp->_modelMatrix);
 
