@@ -17,11 +17,11 @@ set(SOURCE_FILES
     lab001/main.cpp
     lab001/Mesh.h
     lab001/model.h
-        lab001/Plane.h
+    lab001/Plane.h
     lab001/Shader.cpp
     lab001/Shader.hpp
     lab001/ShaderManager.cpp
-    lab001/ShaderManager.hpp)
+    lab001/ShaderManager.hpp lab001/WaterFrameBuffers.cpp lab001/WaterFrameBuffers.h)
 
 add_executable(RealTimeAnimation ${SOURCE_FILES})
 

@@ -16,6 +16,8 @@ uniform vec3 viewPos;
 
 uniform bool shadows;
 
+uniform float utilityColor;
+
 float ShadowCalculation(vec4 fragPosLightSpace)
 {
     // perform perspective divide
@@ -78,6 +80,9 @@ void main()
     float shadow = shadows ? ShadowCalculation(fs_in.FragPosLightSpace) : 0.0;                      
     // vec3 lighting = (ambient + (1.0 - shadow) * (diffuse + specular)) * color;
     vec3 lighting = (ambient + 1.0 * (diffuse + specular)) * color;
-    
+
+    if (utilityColor > 0) {
+        lighting = vec3(1.0f, 1.0f, 0.0f);
+    }
     FragColor = vec4(lighting, 1.0f);
 }

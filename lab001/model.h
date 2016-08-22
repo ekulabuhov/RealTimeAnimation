@@ -161,6 +161,8 @@ public:
 	map<string,GLuint> m_BoneMapping;	// maps a bone name to its index
 	vector<BoneInfo> m_BoneInfo;		// contains final offset and transformations of the bone
 	glm::mat4 _modelMatrix;
+
+    bool enableKinematics;
     
 private:
     /*  Model Data  */
@@ -176,7 +178,7 @@ private:
 	int _animationIndex;
 	float _scaler;
 	glm::quat _quaternion;
-	glm::vec3 _scale;
+	glm::vec3 _scale = glm::vec3(1.0f);
 
     /*  Functions   */
     // Loads a model with supported ASSIMP extensions from file and stores the resulting meshes in the meshes vector.
@@ -369,7 +371,7 @@ private:
 			glm::mat4 TranslationM = glm::translate(glm::vec3(Translation.x, Translation.y, Translation.z));
 
 			// EK: IK can override animations
-			if (KinematicTransforms.find(NodeName) != KinematicTransforms.end()) {
+			if (this->enableKinematics && KinematicTransforms.find(NodeName) != KinematicTransforms.end()) {
 				glm::quat MyQuaternion = KinematicTransforms[NodeName];
 				RotationM = glm::mat4_cast(MyQuaternion);
 			}

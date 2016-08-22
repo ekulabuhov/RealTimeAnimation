@@ -92,8 +92,8 @@ public:
 
 		swatFrames.boneAnimation.resize(3);
 		swatFrames.boneAnimation[0].set(1, 0);
-		swatFrames.boneAnimation[1].set(0, 115);
-		swatFrames.boneAnimation[2].set(0, 211);
+		swatFrames.boneAnimation[1].set(3, 115);
+		swatFrames.boneAnimation[2].set(3, 211);
 
 		tracks["Swat"] = swatFrames;
 	}

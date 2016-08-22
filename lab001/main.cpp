@@ -19,6 +19,7 @@
 #include "Plane.h"
 #include "Cone.h"
 #include "Animator.h"
+#include "WaterFrameBuffers.h"
 
 // Function prototypes
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode);
@@ -60,7 +61,7 @@ Shader lightingShader;
 Shader simpleDepthShader;
 Shader shadowShader;
 
-glm::vec3 lightPos(-2.0f, 4.0f, -1.0f);
+glm::vec3 lightPos(-5.0f, 0.0f, 13.5f);
 glm::vec3 lightColor(1.0f, 1.0f, 1.0f);
 glm::vec3 cube1Color(1.0f, 0.5f, 0.31f);
 float runningSpeed = 860.0f;
@@ -69,8 +70,12 @@ float mouseSensitivity = -0.002f;
 bool isThirdPersonCamera = false;
 long long m_startTime = GetMilliCount();
 float currentIntroTime = 0.0f;
-float cubeX = 0.0f, cubeY = 6.5f, cubeZ = 0.0f;
+float cubeX = -0.60f, cubeY = 1.0f, cubeZ = 0.0f;
 int selectedAnimationIndex;
+// IK related vars
+bool animateCube, b1 = false, b2 = false, b3 = false, drawCones = false;
+float kickingBallAnimationTime = 0.0f;
+float animationStartTime = 0.0f;
 
 bool initWindow()
 {
@@ -136,13 +141,17 @@ void initUI()
     TwBar *myBar;
     myBar = TwNewBar("MyTweakBar");
 
-    float rotSpeed = 0;
     TwAddVarRW(myBar, "cubeX", TW_TYPE_FLOAT, &cubeX, " min=-10 max=10 step=0.01 group=Cube label='X' ");
     TwAddVarRW(myBar, "cubeY", TW_TYPE_FLOAT, &cubeY, " min=-10 max=10 step=0.01 group=Cube label='Y' ");
     TwAddVarRW(myBar, "cubeZ", TW_TYPE_FLOAT, &cubeZ, " min=-10 max=10 step=0.01 group=Cube label='Z' ");
     TwAddVarRW(myBar, "runningSpeed", TW_TYPE_FLOAT, &runningSpeed, " min=0 max=2500 step=10 label='Running Speed' ");
     TwAddButton(myBar, "Play Intro", RunIntroCB, NULL, " label='Play Intro' ");
     TwAddVarRW(myBar, "3rd person camera", TW_TYPE_BOOLCPP, &isThirdPersonCamera, " label='3rd person camera' ");
+    TwAddVarRW(myBar, "Animate cube", TW_TYPE_BOOLCPP, &animateCube, " label='Animate IK Target' ");
+    TwAddVarRW(myBar, "Draw cones", TW_TYPE_BOOLCPP, &drawCones, " label='Draw Cones' ");
+    TwAddVarRW(myBar, "Hand IK", TW_TYPE_BOOLCPP, &b1, " label='Hand IK' ");
+    TwAddVarRW(myBar, "Forearm IK", TW_TYPE_BOOLCPP, &b2, " label='Forearm IK' ");
+    TwAddVarRW(myBar, "Upper arm IK", TW_TYPE_BOOLCPP, &b3, " label='Upper arm IK' ");
 
     // Defining an empty season enum type
     TwType animationType = TwDefineEnum("AnimationType", NULL, 0);
@@ -299,6 +308,7 @@ glm::quat RotationBetweenVectors(glm::vec3 start, glm::vec3 dest){
 		// special case when vectors in opposite directions:
 		// there is no "ideal" rotation axis
 		// So guess one; any will do as long as it's perpendicular to start
+        std::cout << "RBV!" << std::endl;
 		rotationAxis = glm::cross(glm::vec3(0.0f, 0.0f, 1.0f), start);
 		if (glm::length2(rotationAxis) < 0.01 ) // bad luck, they were parallel, try again!
 			rotationAxis = glm::cross(glm::vec3(1.0f, 0.0f, 0.0f), start);
@@ -345,10 +355,10 @@ glm::quat handleRotation(glm::vec3 startVector, glm::vec3 endVector) {
 }
 
 // handVertex is retrievable from Blender bones head and tail position divided by 100
-glm::vec3 boneLocalToGlobal(glm::vec3 handVertex, std::string boneName) {
-	int boneIndex = mainModel->m_BoneMapping[boneName];
-	glm::vec4 PosL = mainModel->m_BoneInfo[boneIndex].FinalTransformation * glm::vec4(handVertex, 1);
-	glm::vec4 PosL2 = mainModel->_modelMatrix * PosL;
+glm::vec3 boneLocalToGlobal(glm::vec3 vertex, std::string boneName, Model *model) {
+	int boneIndex = model->m_BoneMapping[boneName];
+	glm::vec4 PosL = model->m_BoneInfo[boneIndex].FinalTransformation * glm::vec4(vertex, 1);
+	glm::vec4 PosL2 = model->_modelMatrix * PosL;
 
 	return glm::vec3(PosL2);
 }
@@ -356,12 +366,12 @@ glm::vec3 boneLocalToGlobal(glm::vec3 handVertex, std::string boneName) {
 glm::quat gunInitialRotation(0.707f, 0.0f, -0.707f, 0.0f);
 
 void decomposeBoneMatrix(std::string boneName) {
-	int boneIndex = mainModel->m_BoneMapping[boneName];
+	int boneIndex = swatModel->m_BoneMapping[boneName];
 
 	glm::vec3 scale, translation, skew;
 	glm::vec4 persp;
 	glm::quat orientation;
-	glm::decompose(mainModel->m_BoneInfo[boneIndex].FinalTransformation, scale, orientation, translation, skew, persp);
+	glm::decompose(swatModel->m_BoneInfo[boneIndex].FinalTransformation, scale, orientation, translation, skew, persp);
 
 	handgunModel->SetRotationFromQuaternion(gunInitialRotation * glm::inverse(orientation));
 }
@@ -369,28 +379,28 @@ void decomposeBoneMatrix(std::string boneName) {
 glm::vec3 calculateHandNormal() {
 	glm::vec3 handHead = glm::vec3(-0.67416, -0.05412, 1.55149);
 	glm::vec3 handTail = glm::vec3(-0.75961, -0.07666, 1.54633);
-	auto handHeadG = boneLocalToGlobal(handHead, "Fbx01_R_Hand");
-	auto handTailG = boneLocalToGlobal(handTail, "Fbx01_R_Hand");
+	auto handHeadG = boneLocalToGlobal(handHead, "Fbx01_R_Hand", mainModel);
+	auto handTailG = boneLocalToGlobal(handTail, "Fbx01_R_Hand", mainModel);
 	
 	return glm::normalize(handTailG - handHeadG);
 }
 
 glm::vec3 calculateHandTip() {
 	glm::vec3 handTail = glm::vec3(-0.75961, -0.07666, 1.54633);
-	auto handTailG = boneLocalToGlobal(handTail, "Fbx01_R_Hand");
+	auto handTailG = boneLocalToGlobal(handTail, "Fbx01_R_Hand", mainModel);
 	
 	return handTailG;
 }
 
 glm::vec3 calculateSwatHandPosition() {
 	glm::vec3 handHead = glm::vec3(-74.024 - 15, 144.573 - 2, -1.482);
-	auto handPosition = boneLocalToGlobal(handHead, "swat:RightHand");
+	auto handPosition = boneLocalToGlobal(handHead, "swat:RightHand", swatModel);
 	return handPosition;
 }
 
 glm::vec3 calculateHandPosition() {
 	glm::vec3 handHead = glm::vec3(-0.67416, -0.05412, 1.55149);
-	auto handPosition = boneLocalToGlobal(handHead, "Fbx01_R_Hand");
+	auto handPosition = boneLocalToGlobal(handHead, "Fbx01_R_Hand", mainModel);
 	return handPosition;
 }
 
@@ -408,15 +418,23 @@ void drawFirstNormalAndTarget() {
 
 	// hand rotation
 	startVector = calculateHandNormal();
-	endVector = glm::normalize(cube1->getPosition() - calculateHandPosition());
-	glm::quat rotation = calculateHandRotation();
+    glm::vec3 handPosition = calculateHandPosition();
+	endVector = glm::normalize(cube1->getPosition() - handPosition);
 	glm::quat currentRotation = KinematicTransforms["Fbx01_R_Hand"];
 	glm::quat rotationChange = handleRotation(startVector, endVector);
 
-	//currentRotation *= rotationChange;
-	//currentRotation = glm::normalize(currentRotation);
-	//KinematicTransforms["Fbx01_R_Hand"] = currentRotation;
-	KinematicTransforms["Fbx01_R_Hand"] = glm::normalize(currentRotation * rotationChange);
+//    if (abs(cubeY - handPosition.y) < 0.10) {
+//        return;
+//    }
+
+    if (cubeY <= handPosition.y) {
+        float tempX = rotationChange.x;
+        rotationChange.x = rotationChange.z;
+        rotationChange.z = tempX;
+    }
+
+    glm::quat finalRotation = glm::normalize(currentRotation * rotationChange);
+	KinematicTransforms["Fbx01_R_Hand"] = finalRotation;
 
 	// hand debug helper arrows
 	// glm::vec3 handPosition = calculateHandPosition();
@@ -426,7 +444,7 @@ void drawFirstNormalAndTarget() {
 
 glm::vec3 calculateForearmPosition() {
 	glm::vec3 forearmHead = glm::vec3(-0.41828, -0.00961, 1.55952);
-	auto forearmPosition = boneLocalToGlobal(forearmHead, "Fbx01_R_Forearm");
+	auto forearmPosition = boneLocalToGlobal(forearmHead, "Fbx01_R_Forearm", mainModel);
 	return forearmPosition;
 }
 
@@ -447,6 +465,17 @@ void drawSeconNormalAndTarget() {
 
 	glm::quat currentRotation = KinematicTransforms["Fbx01_R_Forearm"];
 	glm::quat rotationChange = handleRotation(effectorVector, endVector);
+
+//    if (abs(cubeY - forearmPosition.y) < 0.10) {
+//        return;
+//    }
+
+    if (cubeY <= forearmPosition.y) {
+        float tempX = rotationChange.x;
+        rotationChange.x = rotationChange.z;
+        rotationChange.z = tempX;
+    }
+
 	KinematicTransforms["Fbx01_R_Forearm"] = glm::slerp(currentRotation, currentRotation * rotationChange, 0.5f);
 
 	// forearm debug helper arrows
@@ -456,7 +485,7 @@ void drawSeconNormalAndTarget() {
 
 glm::vec3 calculateUpperArmPosition() {
 	glm::vec3 upperArmHead = glm::vec3(-0.19121, -0.03099, 1.57615);
-	auto upperArmPosition = boneLocalToGlobal(upperArmHead, "Fbx01_R_UpperArm");
+	auto upperArmPosition = boneLocalToGlobal(upperArmHead, "Fbx01_R_UpperArm", mainModel);
 	return upperArmPosition;
 }
 
@@ -478,6 +507,13 @@ void drawThirdNormalAndTarget() {
 
 	glm::quat currentRotation = KinematicTransforms["Fbx01_R_UpperArm"];
 	glm::quat rotationChange = handleRotation(effectorVector, endVector);
+
+    if (cubeY <= upperArmPosition.y) {
+        float tempX = rotationChange.x;
+        rotationChange.x = rotationChange.z;
+        rotationChange.z = tempX;
+    }
+
 	KinematicTransforms["Fbx01_R_UpperArm"] = glm::slerp(currentRotation, currentRotation * rotationChange, 0.5f);
 
 	// Upper Arm debug helper arrows
@@ -544,32 +580,34 @@ int main()
 	//mainModel->Rotate(glm::vec3(0, 0, M_PI/2));
 	//mainModel->Translate(glm::vec3(5.0f, 0.0f, 0.0f));
 
-	bobModel = new Model("../models/bob.fbx");
-	bobModel->Translate(glm::vec3(-2.0f, 0.0f, 0.0f));
-	bobModel->Scale(glm::vec3(0.00025f, 0.00025f, 0.00025f));	// It's a bit too big for our scene, so scale it down
+	//bobModel = new Model("../models/bob.fbx");
+	//bobModel->Translate(glm::vec3(-2.0f, 0.0f, 0.0f));
+	//bobModel->Scale(glm::vec3(0.00025f, 0.00025f, 0.00025f));	// It's a bit too big for our scene, so scale it down
 
 
 	//mainModel = new Model("../models/boblampclean.md5mesh");
 	//mainModel = new Model("../models/marine_anims.dae");
 	mainModel = new Model("../models/marine_anims.fbx");
-	mainModel->Scale(glm::vec3(0.0001f, 0.0001f, 0.0001f));	// It's a bit too big for our scene, so scale it down
+	mainModel->Scale(glm::vec3(0.0001f));	// It's a bit too big for our scene, so scale it down
     mainModel->SetPosition(glm::vec3(-10.0f, 0.0f, 13.5f));
     mainModel->Rotate(glm::vec3(0, M_PI/2, 0));
 
 	swatModel = new Model("../models/Swat.fbx");
-	swatModel->Scale(glm::vec3(0.01f, 0.01f, 0.01f));	// It's a bit too big for our scene, so scale it down
+	swatModel->Scale(glm::vec3(0.01f));	// It's a bit too big for our scene, so scale it down
 
 	handgunModel = new Model("../models/handgun.fbx");
+    handgunModel->Scale(glm::vec3(1.1f));
 
 	estateModel = new Model("../models/cs_estate/cs_estate.fbx");
 
 	KinematicTransforms["Fbx01_R_UpperArm"] = glm::quat();
 	KinematicTransforms["Fbx01_R_Forearm"] = glm::quat();
-	KinematicTransforms["Fbx01_R_Hand"] = glm::quat();
+	//KinematicTransforms["Fbx01_R_Hand"] = glm::quat(0.4768f, 0.5266f, -0.4412f, 0.5480f);
+    KinematicTransforms["Fbx01_R_Hand"] = glm::quat();
 
 	glm::vec3 cube1Position(cubeX, cubeY, cubeZ);
-	cube1 = new Cube(&shadowShader, cube1Position);
-    cube1->scale(glm::vec3(0.2f));
+	cube1 = new Cube(&lightingShader, cube1Position);
+    cube1->scale(glm::vec3(0.1f));
 
 	cone1 = new Cone(&shadowShader);
 	cone1->setPosition(glm::vec3(2.0f, 6.0f, 0.0f));
@@ -583,6 +621,9 @@ int main()
 
 	lamp = new Cube(&shadowShader, lightPos);
 	lamp->scale(glm::vec3(0.2f));
+
+	//************************* Water Renderer Setup **************************/
+	WaterFrameBuffers* fbos = new WaterFrameBuffers();
 
 	// Configure depth map FBO
     const GLuint SHADOW_WIDTH = 1024, SHADOW_HEIGHT = 1024;
@@ -611,16 +652,17 @@ int main()
 		0.1f,
 		1000.0f
 	);
-
-	bool b1 = true, b2 = true, b3 = true;
   
 	glEnable(GL_DEPTH_TEST);
 	while (!glfwWindowShouldClose(window))
 	{
-		// Set frame time
+		// Set frame time, time in fractions of a second
         GLfloat currentFrame = glfwGetTime();
         deltaTime = currentFrame - lastFrame;
         lastFrame = currentFrame;
+
+        if (kickingBallAnimationTime > 0)
+            kickingBallAnimationTime -= deltaTime;
 
 		if (b1) 
 			drawFirstNormalAndTarget();
@@ -628,6 +670,12 @@ int main()
 			drawSeconNormalAndTarget();
 		if (b3)
 			drawThirdNormalAndTarget();
+
+        if (animateCube) {
+            cubeX = sin(currentFrame/2) * 2;
+            cubeY = sin(currentFrame/3) * 2 + 2;
+            cubeZ = sin(currentFrame/4) * 2;
+        }
 
         cube1->setPosition(glm::vec3(cubeX, cubeY, cubeZ));
 
@@ -691,6 +739,7 @@ int main()
 		glfwPollEvents();
 	}
 
+	fbos->cleanUp();
     TwTerminate();
 	glfwTerminate();
 	return 0;
@@ -710,6 +759,7 @@ int GetMilliCount()
 
 void RenderScene(Shader shader, float RunningTime)
 {
+    RunningTime = RunningTime - animationStartTime;
 	shader.enableShader();
 	shader.setUniformMatrix4fv("projection", projectionMatrix);
 	shader.setUniformMatrix4fv("view", viewMatrix);
@@ -718,10 +768,11 @@ void RenderScene(Shader shader, float RunningTime)
 	shader.setUniform1f("shadows", 1);
 
 	vector<glm::mat4> Transforms;
-	bobModel->BoneTransform(RunningTime, Transforms, KinematicTransforms);
-	bobModel->Draw(shader, Transforms);
+	//bobModel->BoneTransform(RunningTime, Transforms, KinematicTransforms);
+	//bobModel->Draw(shader, Transforms);
 
-	mainModel->BoneTransform(RunningTime, Transforms, KinematicTransforms);
+    mainModel->enableKinematics = (b1 || b2 || b3);
+    mainModel->BoneTransform(RunningTime, Transforms, KinematicTransforms);
     mainModel->Draw(shader, Transforms);
 
     swatModel->BoneTransform(RunningTime, Transforms, KinematicTransforms);
@@ -739,21 +790,39 @@ void RenderScene(Shader shader, float RunningTime)
 
 	//cube1->rotate(glm::vec3(0, 0.01, 0));
 	shader.setUniformMatrix4fv("model", cube1->_modelMatrix);
+    shader.setUniform1f("utilityColor", 1);
 	cube1->draw();	
 
-	shader.setUniformMatrix4fv("model", cone1->_modelMatrix);
-	cone1->draw();
+    if (drawCones) {
+        shader.setUniformMatrix4fv("model", cone1->_modelMatrix);
+        cone1->draw();
 
-	shader.setUniformMatrix4fv("model", cone2->_modelMatrix);
-	cone2->draw();
+        shader.setUniformMatrix4fv("model", cone2->_modelMatrix);
+        cone2->draw();
 
-	shader.setUniformMatrix4fv("model", cone3->_modelMatrix);
-	cone3->draw();
+        shader.setUniformMatrix4fv("model", cone3->_modelMatrix);
+        cone3->draw();
+    }
+
+    shader.setUniformMatrix4fv("model", lamp->_modelMatrix);
+
+    glm::vec3 playerPos = mainModel->GetPosition();
+    // Check the distance between ball and player
+    if (abs(playerPos.x - lightPos.x) < 3 && abs(playerPos.z - lightPos.z) < 3) {
+        // If he's nearby and the animation is almost over => make the ball fly
+        if (kickingBallAnimationTime > 0 && kickingBallAnimationTime < 2) {
+            lamp->move(mainModel->GetForwardVector());
+        }
+        // If the animation is over, reset ball position
+        if (kickingBallAnimationTime <= 0) {
+            lamp->setPosition(lightPos);
+        }
+    }
+    lamp->draw();
+
+    shader.setUniform1f("utilityColor", 0);
 	// Disable wireframe mode
 	//glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-
-	shader.setUniformMatrix4fv("model", lamp->_modelMatrix);
-	lamp->draw();
 }
 
 // Moves/alters the object positions based on user input
@@ -773,8 +842,18 @@ void do_movement()
 	if(keys[GLFW_KEY_LEFT_SHIFT])
         camera.ProcessKeyboard(DOWN, deltaTime);
 
+    if (kickingBallAnimationTime > 0) {
+        return;
+    }
 	// reset the animation if no keys are held
 	mainModel->SetAnimationIndex(0);
+
+    if (keys[GLFW_KEY_Q]) {
+        // Kick ball
+        kickingBallAnimationTime = 5;
+        animationStartTime = (GetMilliCount() - m_startTime) / 1000.0f;
+        mainModel->SetAnimationIndex(7);
+    }
 
 	if (keys[GLFW_KEY_W]) {
 		mainModel->SetAnimationIndex(11);
