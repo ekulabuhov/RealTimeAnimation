@@ -36,7 +36,11 @@ Camera camera(glm::vec3(0.0f, 0.5f, 5.0f));
 Animator animator;
 
 // Properties
+#if RETINA_DISPLAY
+GLuint SCR_WIDTH = 800 * 2, SCR_HEIGHT = 800 * 2;
+#else
 GLuint SCR_WIDTH = 800, SCR_HEIGHT = 800;
+#endif
 
 GLFWwindow* window;
 Cube *cube1, *lamp;
@@ -132,7 +136,7 @@ void TW_CALL RunIntroCB(void *)
 void initUI()
 {
     TwInit(TW_OPENGL_CORE, NULL);
-    TwWindowSize(SCR_WIDTH * 2, SCR_HEIGHT * 2);
+    TwWindowSize(SCR_WIDTH, SCR_HEIGHT);
 
     TwBar *myBar;
     myBar = TwNewBar("MyTweakBar");
@@ -201,7 +205,11 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos)
 
     if (cursorMode == GLFW_CURSOR_NORMAL)
     {
+#if RETINA_DISPLAY
         TwEventMousePosGLFW(xpos * 2, ypos * 2);  // send event to AntTweakBar
+#else
+		TwEventMousePosGLFW(xpos, ypos);  // send event to AntTweakBar
+#endif
         // Event was handled by AntTweakBar, return
         return;
     }
@@ -565,25 +573,6 @@ int main()
 	glUniform1i(glGetUniformLocation(shadowShader._shaderProgramID, "diffuseTexture"), 0);
     glUniform1i(glGetUniformLocation(shadowShader._shaderProgramID, "shadowMap"), 2);
 
-	//Model mainModel("../models/nanosuit/nanosuit.obj");
-	//mainModel.Translate(glm::vec3(0.0f, -1.7f, 0.0f)); // Translate it down a bit so it's at the center of the scene)
-	//mainModel.Scale(glm::vec3(0.2f, 0.2f, 0.2f));	// It's a bit too big for our scene, so scale it down
-	//mainModel = new Model("../models/Bonanza.dae");
-	//mainModel->Scale(glm::vec3(0.2f, 0.2f, 0.2f));	// It's a bit too big for our scene, so scale it down
-	//mainModel->Rotate(glm::vec3(1.0f, 0, 0));	// It's a bit too big for our scene, so scale it down
-	//mainModel = new Model("../models/cube.dae");
-	//mainModel = new Model("../models/monkey_MODEL.dae");
-	//mainModel = new Model("../models/finger.dae");
-	//mainModel->Rotate(glm::vec3(0, 0, M_PI/2));
-	//mainModel->Translate(glm::vec3(5.0f, 0.0f, 0.0f));
-
-	//bobModel = new Model("../models/bob.fbx");
-	//bobModel->Translate(glm::vec3(-2.0f, 0.0f, 0.0f));
-	//bobModel->Scale(glm::vec3(0.00025f, 0.00025f, 0.00025f));	// It's a bit too big for our scene, so scale it down
-
-
-	//mainModel = new Model("../models/boblampclean.md5mesh");
-	//mainModel = new Model("../models/marine_anims.dae");
 	mainModel = new Model("../models/marine_anims.fbx");
 	mainModel->Scale(glm::vec3(0.0001f));	// It's a bit too big for our scene, so scale it down
     mainModel->SetPosition(glm::vec3(-10.0f, 0.0f, 13.5f));
@@ -599,22 +588,15 @@ int main()
 
 	KinematicTransforms["Fbx01_R_UpperArm"] = glm::quat();
 	KinematicTransforms["Fbx01_R_Forearm"] = glm::quat();
-	//KinematicTransforms["Fbx01_R_Hand"] = glm::quat(0.4768f, 0.5266f, -0.4412f, 0.5480f);
     KinematicTransforms["Fbx01_R_Hand"] = glm::quat();
 
 	glm::vec3 cube1Position(cubeX, cubeY, cubeZ);
 	cube1 = new Cube(&lightingShader, cube1Position);
     cube1->scale(glm::vec3(0.1f));
 
-	cone1 = new Cone(&shadowShader);
-	cone1->setPosition(glm::vec3(2.0f, 6.0f, 0.0f));
-
-	cone2 = new Cone(&shadowShader);
-	cone2->setPosition(glm::vec3(2.0f, 5.0f, 0.0f));
-
-	cone3 = new Cone(&shadowShader);
-	cone3->setPosition(glm::vec3(2.0f, 4.0f, 0.0f));
-	
+	cone1 = new Cone(&shadowShader, glm::vec3(2.0f, 6.0f, 0.0f));
+	cone2 = new Cone(&shadowShader, glm::vec3(2.0f, 5.0f, 0.0f));
+	cone3 = new Cone(&shadowShader, glm::vec3(2.0f, 4.0f, 0.0f));
 
 	lamp = new Cube(&shadowShader, lightPos);
 	lamp->scale(glm::vec3(0.2f));
@@ -699,9 +681,9 @@ int main()
 		}
 
 
-		// 2. Render scene as normal 
-        glViewport(0, 0, 1600, 1600);
-		RenderScene(shadowShader, RunningTime, deltaTime);
+		// 2. Render scene as normal
+		glViewport(0, 0, SCR_WIDTH, SCR_HEIGHT);
+        RenderScene(shadowShader, RunningTime, deltaTime);
 
 		// Draw skybox
 		glDepthFunc(GL_LEQUAL);

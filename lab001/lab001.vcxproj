@@ -96,9 +96,9 @@
     <ClCompile Include="CubeMap.cpp" />
     <ClCompile Include="Geometry.cpp" />
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="MyForm.cpp" />
     <ClCompile Include="Shader.cpp" />
     <ClCompile Include="ShaderManager.cpp" />
+    <ClCompile Include="WaterFrameBuffers.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Animator.h" />
@@ -107,12 +107,10 @@
     <ClInclude Include="CubeMap.hpp" />
     <ClInclude Include="Mesh.h" />
     <ClInclude Include="model.h" />
-    <ClInclude Include="MyForm.h">
-      <FileType>CppForm</FileType>
-    </ClInclude>
     <ClInclude Include="Plane.h" />
     <ClInclude Include="Shader.hpp" />
     <ClInclude Include="ShaderManager.hpp" />
+    <ClInclude Include="WaterFrameBuffers.h" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="System" />
@@ -120,11 +118,6 @@
     <Reference Include="System.Drawing" />
     <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Xml" />
-  </ItemGroup>
-  <ItemGroup>
-    <EmbeddedResource Include="MyForm.resx">
-      <DependentUpon>MyForm.h</DependentUpon>
-    </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
     <None Include="shaders\blinnPhong.frag" />
