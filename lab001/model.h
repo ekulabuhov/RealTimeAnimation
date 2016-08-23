@@ -32,6 +32,7 @@ public:
 		m_NumBones = 0;
 		_animationIndex = 0;
 		scene = NULL;
+		this->_scale = glm::vec3(1.0f);
 
         this->loadModel(path);
     }
@@ -178,7 +179,7 @@ private:
 	int _animationIndex;
 	float _scaler;
 	glm::quat _quaternion;
-	glm::vec3 _scale = glm::vec3(1.0f);
+	glm::vec3 _scale;
 
     /*  Functions   */
     // Loads a model with supported ASSIMP extensions from file and stores the resulting meshes in the meshes vector.

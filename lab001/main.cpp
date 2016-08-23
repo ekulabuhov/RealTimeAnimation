@@ -36,7 +36,11 @@ Camera camera(glm::vec3(0.0f, 0.5f, 5.0f));
 Animator animator;
 
 // Properties
+#if RETINA_DISPLAY
+GLuint SCR_WIDTH = 800 * 2, SCR_HEIGHT = 800 * 2;
+#else
 GLuint SCR_WIDTH = 800, SCR_HEIGHT = 800;
+#endif
 
 GLFWwindow* window;
 Cube *cube1, *lamp;
@@ -136,7 +140,7 @@ void TW_CALL RunIntroCB(void *)
 void initUI()
 {
     TwInit(TW_OPENGL_CORE, NULL);
-    TwWindowSize(SCR_WIDTH * 2, SCR_HEIGHT * 2);
+    TwWindowSize(SCR_WIDTH, SCR_HEIGHT);
 
     TwBar *myBar;
     myBar = TwNewBar("MyTweakBar");
@@ -205,7 +209,11 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos)
 
     if (cursorMode == GLFW_CURSOR_NORMAL)
     {
+#if RETINA_DISPLAY
         TwEventMousePosGLFW(xpos * 2, ypos * 2);  // send event to AntTweakBar
+#else
+		TwEventMousePosGLFW(xpos, ypos);  // send event to AntTweakBar
+#endif
         // Event was handled by AntTweakBar, return
         return;
     }
@@ -683,7 +691,7 @@ int main()
 		fbos->unbindCurrentFrameBuffer();
 
 		// 2. Render scene as normal 
-        glViewport(0, 0, 1600, 1600);
+		glViewport(0, 0, SCR_WIDTH, SCR_HEIGHT);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		RenderScene(shadowShader, RunningTime);
 

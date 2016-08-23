@@ -5,17 +5,19 @@
 #ifndef REALTIMEANIMATION_WATERFRAMEBUFFERS_H
 #define REALTIMEANIMATION_WATERFRAMEBUFFERS_H
 
+#include <stddef.h>
 #include <GL/glew.h>
 
 class WaterFrameBuffers {
 private:
-    int REFLECTION_WIDTH = 320;
-    int REFLECTION_HEIGHT = 180;
+    static const int REFLECTION_WIDTH = 320;
+    static const int REFLECTION_HEIGHT = 180;
 
-    int REFRACTION_WIDTH = 1280;
-    int REFRACTION_HEIGHT = 720;
+    static const int REFRACTION_WIDTH = 1280;
+    static const int REFRACTION_HEIGHT = 720;
 
-    GLuint SCR_WIDTH = 800, SCR_HEIGHT = 800;
+    static const GLuint SCR_WIDTH = 800;
+	static const GLuint SCR_HEIGHT = 800;
 
     GLuint reflectionFrameBuffer;
     GLuint reflectionTexture;
