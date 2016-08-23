@@ -27,6 +27,8 @@ public:
 
 	GLuint _shaderProgramID;
 
+	void setUniform1i(std::string uniformName, GLint v);
+
 protected:
 	std::string _readShaderFile(std::string path);
 	bool _compileShader(std::string source, GLuint shaderType, GLuint shaderID);
@@ -39,6 +41,7 @@ protected:
 	
 
 	std::map<std::string, GLuint> _shaderVariableLocations;
+
 };
 
 #endif

@@ -1,7 +1,5 @@
 #include "Geometry.hpp"
 
-GLuint loadTexture(GLchar* path);
-
 Geometry::Geometry(Shader* shader, glm::vec3 position,
 				   GLfloat vertices[], int sizeOfVertices) {
 	Init(shader, position, vertices, sizeOfVertices);
@@ -158,7 +156,7 @@ glm::vec3 Geometry::localToWorld(glm::vec3 localPoint)
 // This function loads a texture from file. Note: texture loading functions like these are usually 
 // managed by a 'Resource Manager' that manages all resources (like textures, models, audio). 
 // For learning purposes we'll just define it as a utility function.
-GLuint loadTexture(GLchar* path)
+GLuint Geometry::loadTexture(GLchar* path)
 {
     // Generate texture ID and load texture data 
     GLuint textureID;

@@ -22,6 +22,8 @@ uniform mat4 model;
 uniform mat4 lightSpaceMatrix;
 uniform mat4 gBones[MAX_BONES];
 
+const vec4 plane = vec4(0, 1, 0, 0);
+
 void main()
 {
 	mat4 BoneTransform = mat4(1.0);
@@ -32,6 +34,9 @@ void main()
 		BoneTransform     += gBones[BoneIDs[2]] * Weights[2];
 		BoneTransform     += gBones[BoneIDs[3]] * Weights[3];
 	}
+
+	//vec4 worldPosition = model * vec4(position, 1.0);
+	//gl_ClipDistance[0] = dot(worldPosition, plane);
 
 	vec4 PosL					= BoneTransform * vec4(position, 1.0f);
     gl_Position					= projection * view * model * PosL;

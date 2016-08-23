@@ -19,19 +19,19 @@ private:
 	glm::mat4 _projectionMatrix;
 	GLuint textureId;
 	GLenum textureTarget;
-	GLenum drawMode;
 
 	GLuint _VBO;
-	GLuint _VAO;
 	GLuint _EBO;
-
-	Shader* _shader;
-
-	GLuint _triangleCount;
 
 	void Init(Shader* shader, glm::vec3 position,
 			  GLfloat vertices[], int sizeOfVertices, GLuint texId = NULL, GLenum textureTarget = NULL);
 
+protected:
+	Shader* _shader;
+	GLuint _VAO;
+	GLuint _triangleCount;
+	GLenum drawMode;
+	GLuint loadTexture(GLchar* path);
 public:
 	// this overload is useful when you need to load a texture
 	Geometry(Shader* shader, glm::vec3 position,

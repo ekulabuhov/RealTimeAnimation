@@ -15,7 +15,11 @@ private:
     int REFRACTION_WIDTH = 1280;
     int REFRACTION_HEIGHT = 720;
 
+#if RETINA_DISPLAY
+    GLuint SCR_WIDTH = 800 * 2, SCR_HEIGHT = 800 * 2;
+#else
     GLuint SCR_WIDTH = 800, SCR_HEIGHT = 800;
+#endif
 
     GLuint reflectionFrameBuffer;
     GLuint reflectionTexture;

@@ -27,7 +27,7 @@ void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
 void mouseKey_callback(GLFWwindow* window, int button, int action, int mods);
 void do_movement();
-void RenderScene(Shader shader, float RunningTime);
+void RenderScene(Shader shader, float RunningTime, float deltaTime = 0);
 int GetMilliCount();
 
 // Camera
@@ -40,7 +40,7 @@ GLuint SCR_WIDTH = 800, SCR_HEIGHT = 800;
 
 GLFWwindow* window;
 Cube *cube1, *lamp;
-Plane *plane1, *reflectionPlane;
+Plane *reflectionPlane;
 Cone *cone1, *cone2, *cone3;
 CubeMap* cubeMap;
 Model *mainModel, *bobModel, *swatModel, *handgunModel, *estateModel;
@@ -55,11 +55,7 @@ map<string,glm::quat> KinematicTransforms;	// maps a bone name to its transform
 GLfloat deltaTime = 0.0f;
 GLfloat lastFrame = 0.0f;
 
-Shader skyboxShader;
-Shader reflectAndRefractShader;
-Shader lightingShader;
-Shader simpleDepthShader;
-Shader shadowShader;
+Shader simpleDepthShader, shadowShader, lightingShader, reflectAndRefractShader, skyboxShader, waterShader;
 
 glm::vec3 lightPos(-5.0f, 0.0f, 13.5f);
 glm::vec3 lightColor(1.0f, 1.0f, 1.0f);
@@ -562,6 +558,7 @@ int main()
 	lightingShader = *ShaderManager::loadShader("lighting");
 	simpleDepthShader = *ShaderManager::loadShader("simpleDepth");
 	shadowShader = *ShaderManager::loadShader("shadow");
+    waterShader = *ShaderManager::loadShader("water");
 
 	// Setup correct textures
 	shadowShader.enableShader();
@@ -609,8 +606,6 @@ int main()
 	cube1 = new Cube(&lightingShader, cube1Position);
     cube1->scale(glm::vec3(0.1f));
 
-	plane1 = new Plane(&shadowShader, glm::vec3(0.0f, 2.0f, 0.0f), "../textures/wood.png");
-
 	cone1 = new Cone(&shadowShader);
 	cone1->setPosition(glm::vec3(2.0f, 6.0f, 0.0f));
 
@@ -626,7 +621,8 @@ int main()
 
 	//************************* Water Renderer Setup **************************/
 	WaterFrameBuffers* fbos = new WaterFrameBuffers();
-	reflectionPlane = new Plane(&lightingShader, glm::vec3(1.0f, 1.0f, 0.0f), fbos->getReflectionTexture());
+	reflectionPlane = new Plane(&waterShader, glm::vec3(-1.8f, 0.8f, 4.25f), fbos->getReflectionTexture(), fbos->getRefractionTexture());
+	reflectionPlane->scale(glm::vec3(1.7f, 0.0f, 0.8f));
 
 	projectionMatrix = glm::perspective(
 		45.0f,
@@ -636,6 +632,7 @@ int main()
 	);
   
 	glEnable(GL_DEPTH_TEST);
+	glEnable(GL_CLIP_DISTANCE0);
 	while (!glfwWindowShouldClose(window))
 	{
 		// Set frame time, time in fractions of a second
@@ -677,15 +674,34 @@ int main()
             mainModel->SetAnimationIndex(selectedAnimationIndex);
         }
 
-		// Water simulation
-		fbos->bindReflectionFrameBuffer();
-		RenderScene(shadowShader, RunningTime);
-		fbos->unbindCurrentFrameBuffer();
+		if (RunningTime - currentIntroTime > 10) {
+			// Water simulation
+			// Render reflection texture
+			fbos->bindReflectionFrameBuffer();
+			float distance = camera.Position.y * 2;
+			camera.Position.y -= distance;
+			// Invert the pitch
+			camera.Pitch = -camera.Pitch;
+			camera.updateCameraVectors();
+			viewMatrix = camera.GetViewMatrix(mainModel->GetYRotation(), mainModel->GetPosition());
+			RenderScene(shadowShader, RunningTime);
+			// Move it back up
+			camera.Position.y += distance;
+			camera.Pitch = -camera.Pitch;
+			camera.updateCameraVectors();
+			viewMatrix = camera.GetViewMatrix(mainModel->GetYRotation(), mainModel->GetPosition());
+
+			// Render refraction texture
+			fbos->bindRefractionFrameBuffer();
+			RenderScene(shadowShader, RunningTime);
+			// Bind to default frame buffer
+			fbos->unbindCurrentFrameBuffer();
+		}
+
 
 		// 2. Render scene as normal 
         glViewport(0, 0, 1600, 1600);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		RenderScene(shadowShader, RunningTime);
+		RenderScene(shadowShader, RunningTime, deltaTime);
 
 		// Draw skybox
 		glDepthFunc(GL_LEQUAL);
@@ -719,8 +735,11 @@ int GetMilliCount()
     return nCount;
 }
 
-void RenderScene(Shader shader, float RunningTime)
+void RenderScene(Shader shader, float RunningTime, float deltaTime)
 {
+	glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
     RunningTime = RunningTime - animationStartTime;
 	shader.enableShader();
 	shader.setUniformMatrix4fv("projection", projectionMatrix);
@@ -750,12 +769,12 @@ void RenderScene(Shader shader, float RunningTime)
 
 	estateModel->Draw(shader);
 
-	//shader.setUniformMatrix4fv("model", plane1->_modelMatrix);
-	//plane1->draw();
+	// A bit of a hack to prevent inception
+	if (deltaTime > 0) {
+		reflectionPlane->draw(projectionMatrix, viewMatrix, deltaTime);
+	}
 
-	shader.setUniformMatrix4fv("model", reflectionPlane->_modelMatrix);
-	reflectionPlane->draw();
-
+    shader.enableShader();
 	shader.setUniformMatrix4fv("model", cube1->_modelMatrix);
     shader.setUniform1f("utilityColor", 1);
 	cube1->draw();	

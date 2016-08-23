@@ -37,3 +37,5 @@ IF(APPLE)
 ENDIF (APPLE)
 target_link_libraries(RealTimeAnimation ${EXTRA_LIBS})
 target_link_libraries(RealTimeAnimation glfw3 assimp SOIL glew AntTweakBar)
+
+add_definitions(-DRETINA_DISPLAY)
